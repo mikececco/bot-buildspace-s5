@@ -48,13 +48,18 @@ export function createServer(bot: Bot) {
 
   server.get('/', c => c.json({ status: true }))
 
-  server.post(
-    '/webhook',
-    webhookCallback(bot, 'hono', {
+  server.post('/webhook', async (c) => {
+    // console.log('Webhook called');
+
+    // Handle the request using the bot's webhook callback
+    await webhookCallback(bot, 'hono', {
       secretToken: config.BOT_WEBHOOK_SECRET,
-    }),
-  )
-  console.log('Gonna return')
+    })(c)
+
+    // You can add additional logging after processing the webhook
+    // console.log('Webhook processed');
+    return c.json({ success: true })
+  })
 
   return server
 }
