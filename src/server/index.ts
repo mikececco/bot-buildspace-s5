@@ -12,6 +12,8 @@ import { config } from '#root/config.js'
 import { requestLogger } from '#root/server/middlewares/request-logger.js'
 
 export function createServer(bot: Bot) {
+  console.log('Serverr')
+  console.log('Serverr')
   const server = new Hono<Env>()
 
   server.use(requestId())
@@ -52,6 +54,7 @@ export function createServer(bot: Bot) {
       secretToken: config.BOT_WEBHOOK_SECRET,
     }),
   )
+  console.log('Gonna return')
 
   return server
 }

@@ -37,7 +37,6 @@ export function createBot(token: string, options: Options) {
     ContextConstructor: createContextConstructor({ logger, prisma }),
   })
   const protectedBot = bot.errorBoundary(errorHandler)
-  console.log('In creating BOT')
 
   // Middlewares
   bot.api.config.use(parseMode('HTML'))
@@ -54,14 +53,12 @@ export function createBot(token: string, options: Options) {
       storage: new PrismaAdapter<SessionData>(prisma.session),
     }),
   )
-  console.log('Created session')
   protectedBot.use(i18n)
 
   // Handlers
   protectedBot.use(welcomeFeature)
   protectedBot.use(anyFeature)
   protectedBot.use(adminFeature)
-  console.log('Using features')
 
   if (isMultipleLocales)
     protectedBot.use(languageFeature)
@@ -69,7 +66,6 @@ export function createBot(token: string, options: Options) {
   // must be the last handler
   protectedBot.use(unhandledFeature)
 
-  console.log('Gonna return')
   return bot
 }
 
