@@ -59,4 +59,6 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   }
 })
 
+console.log('anyFeature registered')
+
 export { composer as anyFeature }
