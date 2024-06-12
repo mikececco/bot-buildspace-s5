@@ -1,6 +1,6 @@
-// import { AssemblyAI } from 'assemblyai'
+import { AssemblyAI } from 'assemblyai'
 import { Composer } from 'grammy'
-// import { config } from '#root/config.js'
+import { config } from '#root/config.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 
@@ -8,9 +8,9 @@ const composer = new Composer<Context>()
 
 const feature = composer.chatType('private')
 
-// const client = new AssemblyAI({
-//   apiKey: config.ASSEMBLY_AI,
-// })
+const client = new AssemblyAI({
+  apiKey: config.ASSEMBLY_AI,
+})
 
 feature.on('message', logHandle('command-any'), async (ctx) => {
   if (ctx.message.photo) {
@@ -34,22 +34,23 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   else if (ctx.message.voice) {
     ctx.reply('Audio received.')
     ctx.chatAction = 'typing'
-    // const file = await ctx.getFile() // valid for at least 1 hour
-    // const path = file.file_path // file path on Bot API server
+    const file = await ctx.getFile() // valid for at least 1 hour
+    const path = file.file_path // file path on Bot API server
+    const fileUrl = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${path}`
 
-    // if (path) {
-    //   const transcript = await client.transcripts.transcribe({ audio_url: path })
+    if (path) {
+      const transcript = await client.transcripts.transcribe({ audio_url: fileUrl })
 
-    //   console.log(transcript.text)
-    //   if (transcript.text) {
-    //     return ctx.reply(transcript.text)
-    //   }
-    //   console.log('hello')
-    //   return ctx.reply('Empty')
-    // }
-    // else {
-    //   console.error('audio_url is undefined')
-    // }
+      console.log(transcript.text)
+      if (transcript.text) {
+        return ctx.reply(transcript.text)
+      }
+      console.log('hello')
+      return ctx.reply('Empty')
+    }
+    else {
+      console.error('audio_url is undefined')
+    }
   }
   else if (ctx.message.sticker) {
     ctx.reply('You sent a sticker.')
