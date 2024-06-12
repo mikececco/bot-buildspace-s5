@@ -61,6 +61,7 @@ export function createBot(token: string, options: Options) {
   protectedBot.use(welcomeFeature)
   protectedBot.use(anyFeature)
   protectedBot.use(adminFeature)
+  console.log('Using features')
 
   if (isMultipleLocales)
     protectedBot.use(languageFeature)
@@ -68,6 +69,7 @@ export function createBot(token: string, options: Options) {
   // must be the last handler
   protectedBot.use(unhandledFeature)
 
+  console.log('Gonna return')
   return bot
 }
 
