@@ -1,7 +1,8 @@
 import { autoChatAction } from '@grammyjs/auto-chat-action'
 import { hydrate } from '@grammyjs/hydrate'
 import { hydrateReply, parseMode } from '@grammyjs/parse-mode'
-import type { BotConfig, StorageAdapter } from 'grammy'
+import type { BotConfig } from 'grammy'
+import { PrismaAdapter } from '@grammyjs/storage-prisma'
 import { Bot as TelegramBot, session } from 'grammy'
 import type {
   Context,
@@ -12,6 +13,7 @@ import {
 } from '#root/bot/context.js'
 import {
   adminFeature,
+  anyFeature,
   languageFeature,
   unhandledFeature,
   welcomeFeature,
@@ -25,12 +27,11 @@ import type { PrismaClientX } from '#root/prisma/index.js'
 
 interface Options {
   prisma: PrismaClientX
-  sessionStorage?: StorageAdapter<SessionData>
   config?: Omit<BotConfig<Context>, 'ContextConstructor'>
 }
 
 export function createBot(token: string, options: Options) {
-  const { sessionStorage, prisma } = options
+  const { prisma } = options
   const bot = new TelegramBot(token, {
     ...options.config,
     ContextConstructor: createContextConstructor({ logger, prisma }),
@@ -48,14 +49,15 @@ export function createBot(token: string, options: Options) {
   protectedBot.use(hydrate())
   protectedBot.use(
     session({
-      initial: () => ({}),
-      storage: sessionStorage,
+      initial: () => ({ counter: 0 }),
+      storage: new PrismaAdapter<SessionData>(prisma.session),
     }),
   )
   protectedBot.use(i18n)
 
   // Handlers
   protectedBot.use(welcomeFeature)
+  protectedBot.use(anyFeature)
   protectedBot.use(adminFeature)
 
   if (isMultipleLocales)

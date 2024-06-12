@@ -1,11 +1,11 @@
 #!/usr/bin/env tsx
 
 import process from 'node:process'
-import { prisma } from './prisma/index.js'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import { createServer, createServerManager } from '#root/server/index.js'
+import { prisma } from '#root/prisma/index.js'
 
 function onShutdown(cleanUp: () => Promise<void>) {
   let isShuttingDown = false
@@ -24,7 +24,6 @@ async function startPolling() {
   const bot = createBot(config.BOT_TOKEN, {
     prisma,
   })
-
   // graceful shutdown
   onShutdown(async () => {
     await bot.stop()
