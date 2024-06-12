@@ -99,3 +99,4 @@ catch (error) {
   logger.error(error)
   process.exit(1)
 }
+console.log('in main')
