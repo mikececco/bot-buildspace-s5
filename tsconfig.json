@@ -18,7 +18,6 @@
     "preserveWatchOutput": true
   },
   "include": [
-    "api/**/*",
     "src/**/*"
   ]
 }
