@@ -37,6 +37,7 @@ export function createBot(token: string, options: Options) {
     ContextConstructor: createContextConstructor({ logger, prisma }),
   })
   const protectedBot = bot.errorBoundary(errorHandler)
+  console.log('In creating BOT')
 
   // Middlewares
   bot.api.config.use(parseMode('HTML'))
@@ -53,6 +54,7 @@ export function createBot(token: string, options: Options) {
       storage: new PrismaAdapter<SessionData>(prisma.session),
     }),
   )
+  console.log('Created session')
   protectedBot.use(i18n)
 
   // Handlers
