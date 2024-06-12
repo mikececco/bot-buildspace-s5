@@ -44,6 +44,7 @@ async function startPolling() {
 }
 
 async function startWebhook() {
+  console.log('Starting')
   const bot = createBot(config.BOT_TOKEN, {
     prisma,
   })
@@ -88,6 +89,7 @@ async function startWebhook() {
 }
 
 try {
+  console.log(config.BOT_MODE)
   if (config.BOT_MODE === 'webhook')
     await startWebhook()
   else if (config.BOT_MODE === 'polling')
