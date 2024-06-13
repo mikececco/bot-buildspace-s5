@@ -50,6 +50,9 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
       // Upload audio file to GCS and get GCS media link
       const gcsUri = await uploadFileToGCS(ctx)
 
+      if (!gcsUri) {
+        throw new Error('Failed to upload file to GCS or empty URI returned.')
+      }
       // Transcribe audio from GCS URI
       const [response] = await client.recognize({
         audio: {
@@ -61,11 +64,13 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
           languageCode: 'en-US',
         },
       })
+      console.log(response)
 
-      if (response.results) {
+      if (response.results && response.results.length > 0) {
         const transcription = response.results?.[0]?.alternatives?.[0]?.transcript
-        ctx.reply(transcription || 'No transcription available.')
+        return ctx.reply(transcription || 'No transcription available.')
       }
+      return ctx.reply('Failed')
     }
     catch (error) {
       console.error('Error recognizing audio:', error)

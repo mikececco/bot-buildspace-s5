@@ -1,5 +1,6 @@
 import { Readable, Stream } from 'node:stream'
 // import path from 'node:path'
+import { Buffer } from 'node:buffer'
 import { Storage } from '@google-cloud/storage'
 import fetch from 'node-fetch'
 import { config } from '#root/config.js'
@@ -25,19 +26,33 @@ export async function uploadFileToGCS(ctx: Context) {
 
     const myBucket = storage.bucket(bucketName)
 
-    // Create a reference to a file object
-    const fileBucket = myBucket.file('test')
+    // SPECIFY MIME?
+    const fileName = `test` // Replace with your desired file name
 
-    // Create a pass through stream from a string
+    // Create a reference to a file object
+    const fileBucket = myBucket.file(fileName)
+
+    // Read fetched content as Buffer
+    const fileBuffer = await fetchedFile.arrayBuffer()
+    const buffer = Buffer.from(fileBuffer)
+
+    // Create a pass through stream from the Buffer
     const passthroughStream = new Stream.PassThrough()
-    passthroughStream.write(fetchedFile)
-    passthroughStream.end()
+    passthroughStream.end(buffer)
+
+    // // Create a pass through stream from a string
+    // const passthroughStream = new Stream.PassThrough()
+    // passthroughStream.write(fetchedFile)
+    // passthroughStream.end()
 
     passthroughStream.pipe(fileBucket.createWriteStream()).on('finish', () => {
       // The file upload is complete
     })
 
     console.log(`File uploaded to ${bucketName}`)
+    // Return GCS URI
+    const gcsUri = `gs://${bucketName}/${fileName}`
+    return gcsUri
   }
   catch (error) {
     console.error('Error uploading file to GCS:', error)
