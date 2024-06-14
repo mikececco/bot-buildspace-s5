@@ -3,11 +3,6 @@
     "buildCommand": "npm run build",
     "devCommand": "npm run dev",
     "outputDirectory": "build",
-    "functions": {
-      "api/*.js": {
-        "maxDuration": 25
-      }
-    },
     "rewrites": [
         {
             "source": "/(.*)",

@@ -16,10 +16,22 @@ model Session {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  telegramId   BigInt   @unique @map("telegram_id")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id         Int       @id @default(autoincrement())
+  telegramId BigInt    @unique @map("telegram_id")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  thoughts   Thought[] // One-to-many relationship with Thought
 
-  @@map(name: "users")
+  @@map("users")
+}
+
+model Thought {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("thoughts")
 }
