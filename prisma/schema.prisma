@@ -18,10 +18,11 @@ model Session {
 model User {
   id         Int       @id @default(autoincrement())
   telegramId BigInt    @unique @map("telegram_id")
-  username  String    @default("Unknown")
+  username   String    @default("Unknown")
   updatedAt  DateTime  @updatedAt @map("updated_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   thoughts   Thought[] // One-to-many relationship with Thought
+  summaries  Summary[] // One-to-many relationship with Summary
 
   @@map("users")
 }
@@ -33,6 +34,28 @@ model Thought {
   user      User     @relation(fields: [userId], references: [id])
   updatedAt DateTime @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
+  summaries ThoughtSummary[]
 
   @@map("thoughts")
+}
+
+model Summary {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  thoughts  ThoughtSummary[]
+
+  @@map("summaries")
+}
+
+model ThoughtSummary {
+  thoughtId Int
+  summaryId Int
+  thought   Thought @relation(fields: [thoughtId], references: [id], onDelete: Cascade)
+  summary   Summary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+
+  @@id([thoughtId, summaryId])
 }

@@ -1,6 +1,6 @@
 import { prisma } from '#root/prisma/index.js'
 
-interface CreateThoughtInput {
+export interface CreateThoughtInput {
   telegramId: number
   username: string
   content: string

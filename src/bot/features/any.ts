@@ -11,6 +11,8 @@ import { getTranscript } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { createOrFindUser } from '#root/prisma/create-user.js'
+import { createThought } from '#root/prisma/create-thought.js'
+import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
 import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
 
 type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
@@ -69,6 +71,15 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
         imageDataPart,
         model,
       )
+
+      const dataSummary: CreateThoughtInput = {
+        telegramId: ctx.from.id, // Replace with actual Telegram user ID
+        username: ctx.from.username || 'Unknown', // Replace with actual username, default to 'Unknown' if not provided
+        content: generatedContent,
+      }
+
+      createThought(dataSummary)
+
       return ctx.reply(generatedContent)
     }
     catch {
