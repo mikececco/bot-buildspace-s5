@@ -7,6 +7,7 @@ import { SpeechClient } from '@google-cloud/speech'
 import type { protos } from '@google-cloud/speech'
 import { config } from '#root/config.js'
 import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
+import { inngest } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 
@@ -43,9 +44,6 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     ctx.reply('You sent a video note.')
   }
   else if (ctx.message.voice) {
-    ctx.reply('Audio received.')
-    ctx.chatAction = 'typing'
-
     try {
       const config: IRecognitionConfig = {
         model: 'latest_short',
@@ -69,6 +67,11 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
         audio,
       }
 
+      // await inngest.send({
+      //   name: 'app/long-running-recognition.completed',
+      //   data: { client, request, ctx },
+      // })
+
       const [operation] = await client.longRunningRecognize(request)
       // Get a Promise representation of the final result of the job.
       const [response] = await operation.promise()
@@ -78,6 +81,8 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
           .join('\n')
         await ctx.reply(transcription)
       }
+      ctx.reply('Audio received.')
+      ctx.chatAction = 'typing'
     }
     catch (error) {
       console.error('Error recognizing audio:', error)
