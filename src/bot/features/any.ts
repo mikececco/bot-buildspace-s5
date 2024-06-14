@@ -10,6 +10,7 @@ import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
 import { getTranscript } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
+import { createOrFindUser } from '#root/prisma/create-user.js'
 
 type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
@@ -25,6 +26,18 @@ const feature = composer.chatType('private')
 const client = new SpeechClient()
 
 feature.on('message', logHandle('command-any'), async (ctx) => {
+  try {
+    const newUser = await createOrFindUser({
+      telegramId: ctx.from.id,
+      username: ctx.from.username ?? 'Unknown', // Use optional chaining and provide a default value
+    })
+    console.log('User username:', ctx.from.username)
+    console.log('Created user:', newUser)
+  }
+  catch (error) {
+    console.error('Error creating user:', error)
+  }
+
   if (ctx.message.photo) {
     ctx.reply('You sent a photo.')
   }
