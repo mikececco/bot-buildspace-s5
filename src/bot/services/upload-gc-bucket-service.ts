@@ -1,8 +1,9 @@
 import { Readable, Stream } from 'node:stream'
-// import path from 'node:path'
 import { Buffer } from 'node:buffer'
+import fs from 'node:fs'
+import path from 'node:path'
+import axios from 'axios'
 import { Storage } from '@google-cloud/storage'
-import fetch from 'node-fetch'
 import { config } from '#root/config.js'
 import type {
   Context,
@@ -11,6 +12,13 @@ import type {
 const storage = new Storage()
 
 const bucketName = 'buildspace-project-audios' // Replace with your GCS bucket name
+const outputDir = './downloaded_audio' // You can specify any directory path here
+
+// Ensure the directory exists, create it if it doesn't
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true })
+}
+const outputFilePath = path.join(outputDir, 'output_filename.ogg') // Replace 'output_filename.ogg' with the desired filename and extension
 
 export async function uploadFileToGCS(ctx: Context) {
   try {
@@ -18,32 +26,23 @@ export async function uploadFileToGCS(ctx: Context) {
     const path = file.file_path
     const fileUrl = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${path}` // IS THIS remote LINEAR16 file?
 
-    const fetchedFile = await fetch(fileUrl)
+    const responseFileUrl = await axios.get(fileUrl, {
+      responseType: 'arraybuffer',
+    })
 
-    if (!fetchedFile.ok) {
-      throw new Error(`Failed to fetch file from Telegram, status ${fetchedFile.status}`)
-    }
+    fs.writeFileSync(outputFilePath, Buffer.from(responseFileUrl.data))
 
     const myBucket = storage.bucket(bucketName)
 
     // SPECIFY MIME?
-    const fileName = `test` // Replace with your desired file name
+    const fileName = `output_filename.ogg` // Replace with your desired file name
 
     // Create a reference to a file object
     const fileBucket = myBucket.file(fileName)
 
-    // Read fetched content as Buffer
-    const fileBuffer = await fetchedFile.arrayBuffer()
-    const buffer = Buffer.from(fileBuffer)
-
     // Create a pass through stream from the Buffer
     const passthroughStream = new Stream.PassThrough()
-    passthroughStream.end(buffer)
-
-    // // Create a pass through stream from a string
-    // const passthroughStream = new Stream.PassThrough()
-    // passthroughStream.write(fetchedFile)
-    // passthroughStream.end()
+    passthroughStream.end(Buffer.from(responseFileUrl.data))
 
     passthroughStream.pipe(fileBucket.createWriteStream()).on('finish', () => {
       // The file upload is complete

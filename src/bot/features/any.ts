@@ -1,4 +1,7 @@
-import { AssemblyAI } from 'assemblyai'
+// import { Buffer } from 'node:buffer'
+// import fs from 'node:fs'
+// import path from 'node:path'
+// import { AssemblyAI } from 'assemblyai'
 import { Composer } from 'grammy'
 import { SpeechClient } from '@google-cloud/speech'
 import type { protos } from '@google-cloud/speech'
@@ -7,7 +10,7 @@ import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 
-// type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
+type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
 const composer = new Composer<Context>()
 
@@ -43,70 +46,43 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     ctx.reply('Audio received.')
     ctx.chatAction = 'typing'
 
-    ctx.reply('Audio received.')
-    ctx.chatAction = 'typing'
-
     try {
-      // Upload audio file to GCS and get GCS media link
-      const gcsUri = await uploadFileToGCS(ctx)
-
-      if (!gcsUri) {
-        throw new Error('Failed to upload file to GCS or empty URI returned.')
+      const config: IRecognitionConfig = {
+        model: 'latest_short',
+        encoding: 'OGG_OPUS',
+        sampleRateHertz: 48000,
+        audioChannelCount: 1,
+        enableWordTimeOffsets: true,
+        enableWordConfidence: true,
+        languageCode: 'it-IT',
       }
-      // Transcribe audio from GCS URI
-      const [response] = await client.recognize({
-        audio: {
-          uri: gcsUri,
-        },
-        config: {
-          encoding: 'LINEAR16',
-          sampleRateHertz: 16000,
-          languageCode: 'en-US',
-        },
-      })
-      console.log(response)
 
-      if (response.results && response.results.length > 0) {
-        const transcription = response.results?.[0]?.alternatives?.[0]?.transcript
-        return ctx.reply(transcription || 'No transcription available.')
+      // const gcsUri = await uploadFileToGCS(ctx)
+      const gcsUri = 'gs://buildspace-project-audios/output_filename.ogg'
+
+      const audio = {
+        uri: gcsUri,
       }
-      return ctx.reply('Failed')
+
+      const request = {
+        config,
+        audio,
+      }
+
+      const [operation] = await client.longRunningRecognize(request)
+      // Get a Promise representation of the final result of the job.
+      const [response] = await operation.promise()
+      if (response.results) {
+        const transcription = response.results
+          .map(result => result.alternatives?.[0]?.transcript) // Optional chaining (?.) added here
+          .join('\n')
+        await ctx.reply(transcription)
+      }
     }
     catch (error) {
       console.error('Error recognizing audio:', error)
       ctx.reply('Error recognizing audio.')
     }
-    // const file = await ctx.getFile() // valid for at least 1 hour
-
-    // The path to the remote LINEAR16 file
-    // const gcsUri = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${path}`
-    // const gcsUri = 'gs://cloud-samples-data/speech/brooklyn_bridge.raw'
-
-    // // The audio file's encoding, sample rate in hertz, and BCP-47 language code
-    // const audio = {
-    //   uri: gcsUri,
-    // }
-    // const config: IRecognitionConfig = {
-    //   encoding: 'LINEAR16',
-    //   sampleRateHertz: 16000,
-    //   languageCode: 'en-US',
-    // }
-    // const request = {
-    //   audio,
-    //   config,
-    // }
-
-    // // Detects speech in the audio file
-    // const [response] = await client.recognize(request)
-
-    // if (response.results) {
-    //   const transcription = response.results
-    //     .map(result => result.alternatives?.[0]?.transcript) // Optional chaining (?.) added here
-    //     .filter(transcript => transcript !== undefined) // Filter out undefined values
-    //     .join('\n')
-
-    //   return ctx.reply(transcription)
-    // }
   }
   else if (ctx.message.sticker) {
     ctx.reply('You sent a sticker.')
