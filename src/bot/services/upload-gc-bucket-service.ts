@@ -20,7 +20,7 @@ if (!fs.existsSync(outputDir)) {
 }
 const outputFilePath = path.join(outputDir, 'output_filename.ogg') // Replace 'output_filename.ogg' with the desired filename and extension
 
-export async function uploadFileToGCS(ctx: Context) {
+export async function uploadFileToGCS(ctx: Context, fileId: string) {
   try {
     const file = await ctx.getFile() // Assuming ctx is your Telegram context object
     const path = file.file_path
@@ -35,7 +35,7 @@ export async function uploadFileToGCS(ctx: Context) {
     const myBucket = storage.bucket(bucketName)
 
     // SPECIFY MIME?
-    const fileName = `output_filename.ogg` // Replace with your desired file name
+    const fileName = fileId // Replace with your desired file name
 
     // Create a reference to a file object
     const fileBucket = myBucket.file(fileName)
