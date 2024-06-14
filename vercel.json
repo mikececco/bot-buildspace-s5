@@ -4,9 +4,6 @@
     "devCommand": "npm run dev",
     "outputDirectory": "build",
     "functions": {
-      "api/test.js": {
-        "maxDuration": 30
-      },
       "api/*.js": {
         "maxDuration": 25
       }
