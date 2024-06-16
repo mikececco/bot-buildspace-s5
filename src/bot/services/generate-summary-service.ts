@@ -14,8 +14,8 @@ export async function generateThoughtsSummary(thoughts: Thought[]) {
 
   const generatedContent = await handleTextRequest(
     config.GOOGLE_AI,
-    allThoughts,
     prompt,
+    allThoughts,
     model,
   )
   return generatedContent

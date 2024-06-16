@@ -54,8 +54,9 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
       const prompt = `
       I am currently documenting my day, the following picture is part of some moment.
       Is it a selfie, picture of a text or environment?
-      \n Extract and respond with the deep meaning of the picture in one line.
-      \n Describe the picture in 5 words in another line.
+      \n IF so, respond in two lines:
+      \n\n LINE 1: Describe the image with a deep meaning of the picture in one line.
+      \n\n LINE 2: Describe the picture in 5 words.
       `
 
       const imageDataPart: InlineDataPart = {

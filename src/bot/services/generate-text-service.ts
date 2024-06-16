@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-let instance: GoogleGenerativeAI | null
+let instance: GoogleGenerativeAI | null = null
 
 async function createGenerativeAIService(apiKey: string): Promise<(prompt: string, allThoughts: string, model: string) => Promise<string>> {
   if (!instance) {
@@ -18,7 +18,6 @@ async function createGenerativeAIService(apiKey: string): Promise<(prompt: strin
       })
       const result = await modelInstance.generateContent([prompt, allThoughts])
       return result.response.text()
-      // Use modelInstance
     }
     return 'EMPTY'
   }
@@ -28,17 +27,14 @@ async function createGenerativeAIService(apiKey: string): Promise<(prompt: strin
 
 export async function handleTextRequest(
   apiKey: string,
-  allThoughts: string,
   prompt: string,
+  allThoughts: string,
   model: string,
 ): Promise<string> {
   const generateContent = await createGenerativeAIService(apiKey)
 
   try {
     const generatedContent = await generateContent(prompt, allThoughts, model)
-    // const jsonContent = JSON.stringify(generatedContent, undefined, 2)
-    // console.log('HAVE JSON CONTENT')
-
     return generatedContent
   }
   catch (error) {
