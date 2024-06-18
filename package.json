@@ -21,7 +21,8 @@
     "dev": "tsc-watch --onSuccess \"tsx ./src/main.ts\"",
     "start": "tsc && tsx ./src/main.ts",
     "start:force": "tsx ./src/main.ts",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@google-cloud/speech": "^6.6.0",
