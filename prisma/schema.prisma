@@ -1,12 +1,13 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  previewFeatures = ["driverAdapters", "postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  extensions = [vector]
 }
 
 model Session {
@@ -22,7 +23,7 @@ model User {
   updatedAt  DateTime  @updatedAt @map("updated_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   thoughts   Thought[] // One-to-many relationship with Thought
-  summaries  Summary[] // One-to-many relationship with Summary
+  // summaries  Summary[] // One-to-many relationship with Summary
 
   @@map("users")
 }
@@ -30,32 +31,33 @@ model User {
 model Thought {
   id        Int      @id @default(autoincrement())
   content   String
+  embedding Unsupported("vector")? // Store embedding as an array of floats
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   updatedAt DateTime @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
-  summaries ThoughtSummary[]
+  // summaries ThoughtSummary[]
 
   @@map("thoughts")
 }
 
-model Summary {
-  id        Int      @id @default(autoincrement())
-  content   String
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  thoughts  ThoughtSummary[]
+// model Summary {
+//   id        Int      @id @default(autoincrement())
+//   content   String
+//   userId    Int
+//   user      User     @relation(fields: [userId], references: [id])
+//   updatedAt DateTime @updatedAt @map("updated_at")
+//   createdAt DateTime @default(now()) @map("created_at")
+//   thoughts  ThoughtSummary[]
 
-  @@map("summaries")
-}
+//   @@map("summaries")
+// }
 
-model ThoughtSummary {
-  thoughtId Int
-  summaryId Int
-  thought   Thought @relation(fields: [thoughtId], references: [id], onDelete: Cascade)
-  summary   Summary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+// model ThoughtSummary {
+//   thoughtId Int
+//   summaryId Int
+//   thought   Thought @relation(fields: [thoughtId], references: [id], onDelete: Cascade)
+//   summary   Summary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
 
-  @@id([thoughtId, summaryId])
-}
+//   @@id([thoughtId, summaryId])
+// }

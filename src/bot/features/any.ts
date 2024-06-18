@@ -11,9 +11,11 @@ import { getTranscript } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { createOrFindUser } from '#root/prisma/create-user.js'
-import { createThought } from '#root/prisma/create-thought.js'
+import { createThought, findSimilarEmbeddings } from '#root/prisma/create-thought.js'
 import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
 import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
+import { embed } from '#root/bot/services/embed-service.js'
+import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
 
 type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
@@ -23,6 +25,15 @@ const feature = composer.chatType('private')
 
 // Creates a client
 const client = new SpeechClient()
+
+feature.on('message::url', logHandle('command-link'), async (ctx) => {
+  if (ctx.message.text) {
+    getLinkContent(ctx.message.text, ctx)
+
+    ctx.reply('Analizing your link...')
+    ctx.chatAction = 'typing'
+  }
+}) // messages with URL in text or caption (photos, etc)
 
 feature.on('message', logHandle('command-any'), async (ctx) => {
   try {
@@ -36,17 +47,16 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   catch (error) {
     console.error('Error creating user:', error)
   }
-
   if (ctx.message.photo) {
-    const file = await ctx.getFile() // valid for at least 1 hour
-
-    if (!file) {
-      throw new Error('No file received from Telegram')
-    }
-
-    const downloadLink = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${file.file_path}`
-
     try {
+      const file = await ctx.getFile() // valid for at least 1 hour
+
+      if (!file) {
+        throw new Error('No file received from Telegram')
+      }
+
+      const downloadLink = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${file.file_path}`
+
       const response = await axios.get(downloadLink, {
         responseType: 'arraybuffer',
       })
@@ -86,10 +96,25 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     catch {
       console.log('ERROR')
     }
-    ctx.reply('You sent a photo.')
   }
   else if (ctx.message.animation) {
     ctx.reply('You sent an animation.')
+  }
+  else if (ctx.message.text) {
+    try {
+      // Generate the embedding for the incoming text
+      const embedding = await embed(ctx.message.text)
+
+      const similarThoughts = await findSimilarEmbeddings(ctx.from.id, embedding)
+      const similarThoughtsString = similarThoughts.map(thought => `ID: ${thought.id}, Content: ${thought.content}`).join('\n')
+
+      // Reply with the similar thoughts
+      await ctx.reply(`You sent a text. Here are the top similar thoughts:\n${similarThoughtsString}`)
+    }
+    catch (error) {
+      console.error('Error handling incoming text:', error)
+      await ctx.reply('Failed to process your request. Please try again later.')
+    }
   }
   else if (ctx.message.audio) {
     ctx.reply('You sent an audio file.')
