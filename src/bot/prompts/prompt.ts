@@ -15,7 +15,7 @@ To generate your answer:
 
 Provide your justification between <justification> tags and your final answer between <answer> tags, formatting both in markdown.
 
-If none context is provided, introduce yourself and explain that the user can save content which will allow you to answer questions about that content in the future. Do not provide an answer if no context is provided.`
+If no context is provided, introduce yourself and explain that the user can save content which will allow you to answer questions about that content in the future. Do not provide an answer if no context is provided.`
 
 // export const template = ({ contexts, question }) => {
 //   // Map over contexts to generate the context and score parts
