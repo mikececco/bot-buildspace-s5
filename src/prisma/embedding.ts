@@ -66,8 +66,21 @@ export async function saveEmbedding(telegramId: number, username: string, conten
     await prisma.$disconnect()
   }
 }
+// interface EmbeddingInfo {
+//   content: string
+//   thoughtId: number // Assuming thought is a string field in your Thought model
+// }
 
-export async function findSimilarEmbeddings(telegramId: number, embedding: number[]): Promise<string> {
+interface EmbeddingsMap {
+  [embeddingId: number]: {
+    content: string
+    thoughtId: number
+    // Add other properties as needed
+  }
+}
+
+export async function findSimilarEmbeddings(ctx: any, embedding: number[]) {
+  const telegramId = ctx.from.id
   try {
     let user = await prisma.user.findUnique({
       where: {
@@ -87,27 +100,59 @@ export async function findSimilarEmbeddings(telegramId: number, embedding: numbe
     const vectorEmbedding = pgvector.toSql(embedding)
 
     const res = await pool.query(`
-      SELECT id, content, embedding::text
+      SELECT id, content, "thoughtId"
       FROM embeddings
       WHERE "userId" = $1
       ORDER BY embedding <-> $2::vector
-      LIMIT 1
+      LIMIT 3
     `, [user.id, vectorEmbedding])
 
-    // Return the single row if it exists, otherwise return null
-    const closestEmbedding = res.rows.length > 0 ? res.rows[0] : null
+    const embeddingsMap: EmbeddingsMap = {}
 
-    if (closestEmbedding) {
-      const content = closestEmbedding.content
-      return content
+    // Iterate through the rows returned by the query
+    for (let i = 0; i < res.rows.length; i++) {
+      const embedding = res.rows[i]
+      const embeddingId = embedding.id
+      const content = embedding.content
+      const thoughtId = embedding.thoughtId
+
+      console.log(`Embedding ID: ${embeddingId}, Content: ${content}, Thought ID: ${thoughtId}`)
+
+      // Build the structure of embeddingsMap
+      embeddingsMap[embeddingId] = {
+        content,
+        thoughtId,
+      }
+    }
+    if (embeddingsMap) {
+      // return formatObject(embeddingsMap, ctx)
+      return embeddingsMap
     }
     else {
       console.log('No embedding found for the given user.')
-      return vectorEmbedding
+      return embeddingsMap
     }
   }
   catch (error) {
     console.error('Error finding similar embeddings:', error)
     throw error
+  }
+}
+
+export async function formatObject(object: EmbeddingsMap, ctx: any) {
+  for (const embeddingId in object) {
+    if (Object.prototype.hasOwnProperty.call(object, embeddingId)) {
+      const entry = object[Number.parseInt(embeddingId)] // Access each entry in similarThoughts
+
+      // Access properties of each entry
+      const content = entry.content
+      const thoughtId = entry.thoughtId
+
+      // Process each entry as needed
+      console.log(`Embedding ID: ${embeddingId}, Content: ${content}, Thought ID: ${thoughtId}`)
+
+      // Reply to ctx with the extracted data
+      await ctx.reply(`Embedding ID: ${embeddingId}, Content: ${content}, Thought ID: ${thoughtId}`)
+    }
   }
 }

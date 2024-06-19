@@ -1,3 +1,6 @@
+import { Buffer } from 'node:buffer'
+import type { InlineDataPart } from '@google/generative-ai'
+import axios from 'axios'
 import type { Conversation } from '@grammyjs/conversations'
 import { createConversation } from '@grammyjs/conversations'
 import type { Context } from '#root/bot/context.js'
@@ -8,25 +11,56 @@ import { createContext } from '#root/bot/services/create-context-service.js'
 import { findSimilarEmbeddings } from '#root/prisma/embedding.js'
 import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
+import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
+import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
+import { config } from '#root/config.js'
 
-export const LINK_CONVERSATION = 'link'
+export const IMAGE_CONVERSATION = 'image'
 
-export function linkConversation() {
+export function imageConversation() {
   return createConversation(
     async (conversation: Conversation<Context>, ctx: Context) => {
-      if (ctx.message && ctx.message.text && ctx.from) {
-        await ctx.reply('Analyzing your link...')
+      if (ctx.message && ctx.message.photo && ctx.from) {
+        await ctx.reply('Analyzing your image...')
         ctx.chatAction = 'typing'
 
-        const text = ctx.message.text.toLowerCase()
+        const file = await ctx.getFile() // valid for at least 1 hour
 
-        if (text.includes('spotify') || text.includes('youtube')) {
-          // Logic for handling Spotify or YouTube links
-          await ctx.reply('Detected Spotify or YouTube link.')
-          return await ctx.reply('Feature to extrapolate content coming soon!')
+        if (!file) {
+          throw new Error('No file received from Telegram')
         }
 
-        createContext(ctx)
+        const downloadLink = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${file.file_path}`
+
+        const response = await axios.get(downloadLink, {
+          responseType: 'arraybuffer',
+        })
+
+        const prompt = `
+        Describe the image as extensively as you can, provide a lot of details.
+        `
+
+        const imageDataPart: InlineDataPart = {
+          inlineData: {
+            data: Buffer.from(response.data).toString('base64'),
+            mimeType: 'image/jpeg', // Set the correct mime type for your file
+          },
+        }
+        const model = 'gemini-pro-vision' // Corrected model name
+        const generatedContent = await handleGenerateContentRequest(
+          config.GOOGLE_AI,
+          prompt,
+          imageDataPart,
+          model,
+        )
+
+        const dataSummary: CreateThoughtInput = {
+          telegramId: ctx.from.id, // Replace with actual Telegram user ID
+          username: ctx.from.username || 'Unknown', // Replace with actual username, default to 'Unknown' if not provided
+          content: generatedContent,
+        }
+
+        createContext(ctx, dataSummary, generatedContent)
 
         let shouldExit = false
 
@@ -95,6 +129,6 @@ export function linkConversation() {
         }
       }
     },
-    LINK_CONVERSATION,
+    IMAGE_CONVERSATION,
   )
 }

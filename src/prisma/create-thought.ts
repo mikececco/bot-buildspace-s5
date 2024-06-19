@@ -27,32 +27,12 @@ export async function createThought(data: CreateThoughtInput) {
       })
     }
 
-    // // Generate the embedding
-    // const embedding = await embed(data.content)
-
-    // // Convert embedding to SQL-compatible vector
-    // const vectorEmbedding = pgvector.toSql(embedding)
-
     const thought = await prisma.thought.create({
       data: {
         content: data.content,
         userId: user.id,
       },
     })
-
-    // // Update the thought with the embedding
-    // await pool.query(`
-    //   UPDATE thoughts
-    //   SET embedding = $1::vector
-    //   WHERE id = $2
-    // `, [vectorEmbedding, thought.id])
-
-    // // Return the created thought
-    // const updatedThought = await prisma.thought.findUnique({
-    //   where: {
-    //     id: thought.id,
-    //   },
-    // })
 
     return thought
   }

@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "thoughts" ADD COLUMN     "embedding" DOUBLE PRECISION[] DEFAULT ARRAY[]::DOUBLE PRECISION[];

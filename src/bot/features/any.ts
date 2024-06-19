@@ -1,21 +1,16 @@
-import { Buffer } from 'node:buffer'
-import type { InlineDataPart } from '@google/generative-ai'
 import { Composer } from 'grammy'
 import { SpeechClient } from '@google-cloud/speech'
 import type { protos } from '@google-cloud/speech'
-import axios from 'axios'
 import type { Voice } from '@grammyjs/types'
-import { config } from '#root/config.js'
 import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
 import { getTranscript } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { createOrFindUser } from '#root/prisma/create-user.js'
-import { createThought } from '#root/prisma/create-thought.js'
 import { findSimilarEmbeddings } from '#root/prisma/embedding.js'
-import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
-import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
-import { LINK_CONVERSATION } from '#root/bot/conversations/index.js'
+import { IMAGE_CONVERSATION, LINK_CONVERSATION } from '#root/bot/conversations/index.js'
+import { embed } from '#root/bot/services/embed-service.js'
+import { completion } from '#root/bot/services/completion-service.js'
 
 type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
@@ -43,54 +38,7 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     console.error('Error creating user:', error)
   }
   if (ctx.message.photo) {
-    try {
-      const file = await ctx.getFile() // valid for at least 1 hour
-
-      if (!file) {
-        throw new Error('No file received from Telegram')
-      }
-
-      const downloadLink = `https://api.telegram.org/file/bot${config.BOT_TOKEN}/${file.file_path}`
-
-      const response = await axios.get(downloadLink, {
-        responseType: 'arraybuffer',
-      })
-
-      const prompt = `
-      I am currently documenting my day, the following picture is part of some moment.
-      Is it a selfie, picture of a text or environment?
-      \n IF so, respond in two lines:
-      \n\n LINE 1: Describe the image with a deep meaning of the picture in one line.
-      \n\n LINE 2: Describe the picture in 5 words.
-      `
-
-      const imageDataPart: InlineDataPart = {
-        inlineData: {
-          data: Buffer.from(response.data).toString('base64'),
-          mimeType: 'image/jpeg', // Set the correct mime type for your file
-        },
-      }
-      const model = 'gemini-pro-vision' // Corrected model name
-      const generatedContent = await handleGenerateContentRequest(
-        config.GOOGLE_AI,
-        prompt,
-        imageDataPart,
-        model,
-      )
-
-      const dataSummary: CreateThoughtInput = {
-        telegramId: ctx.from.id, // Replace with actual Telegram user ID
-        username: ctx.from.username || 'Unknown', // Replace with actual username, default to 'Unknown' if not provided
-        content: generatedContent,
-      }
-
-      createThought(dataSummary)
-
-      return ctx.reply(generatedContent)
-    }
-    catch {
-      console.log('ERROR')
-    }
+    return ctx.conversation.enter(IMAGE_CONVERSATION)
   }
   else if (ctx.message.animation) {
     ctx.reply('You sent an animation.')
@@ -98,14 +46,15 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   else if (ctx.message.text) {
     try {
       // // Generate the embedding for the incoming text
-      // const embedding = await embed(ctx.message.text)
+      ctx.chatAction = 'typing'
+      const question = ctx.message.text
+      const embedding = await embed(question)
+      const similarThoughts = await findSimilarEmbeddings(ctx, embedding)
 
-      // const similarThoughts = await findSimilarEmbeddings(ctx.from.id, embedding)
-      // const similarThoughtsString = similarThoughts.map(thought => `ID: ${thought.id}, Content: ${thought.content}`).join('\n')
+      const completed = await completion(similarThoughts, question)
 
-      // Reply with the similar thoughts
-      // await ctx.reply(`You sent a text. Here are the top similar thoughts:\n${similarThoughtsString}`)
-      await ctx.reply(`You sent a text. Here are the top similar thoughts`)
+      await ctx.reply(completed)
+      // await ctx.reply(`From: ${similarThoughts}`)
     }
     catch (error) {
       console.error('Error handling incoming text:', error)
