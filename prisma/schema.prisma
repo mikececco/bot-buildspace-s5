@@ -23,6 +23,7 @@ model User {
   updatedAt  DateTime  @updatedAt @map("updated_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   thoughts   Thought[] // One-to-many relationship with Thought
+  embeddings   Embedding[] // One-to-many relationship with Thought
   // summaries  Summary[] // One-to-many relationship with Summary
 
   @@map("users")
@@ -31,14 +32,28 @@ model User {
 model Thought {
   id        Int      @id @default(autoincrement())
   content   String
-  embedding Unsupported("vector")? // Store embedding as an array of floats
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   updatedAt DateTime @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
+  embeddings   Embedding[] // One-to-many relationship with Thought
   // summaries ThoughtSummary[]
 
   @@map("thoughts")
+}
+
+model Embedding {
+  id        Int      @id @default(autoincrement())
+  content   String
+  embedding Unsupported("vector")? // Store embedding as an array of floats
+  userId    Int      @default(1)
+  user      User     @relation(fields: [userId], references: [id])
+  thoughtId    Int
+  thought      Thought     @relation(fields: [thoughtId], references: [id])
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("embeddings")
 }
 
 // model Summary {

@@ -11,11 +11,11 @@ import { getTranscript } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { createOrFindUser } from '#root/prisma/create-user.js'
-import { createThought, findSimilarEmbeddings } from '#root/prisma/create-thought.js'
+import { createThought } from '#root/prisma/create-thought.js'
+import { findSimilarEmbeddings } from '#root/prisma/embedding.js'
 import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
 import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
-import { embed } from '#root/bot/services/embed-service.js'
-import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
+import { LINK_CONVERSATION } from '#root/bot/conversations/index.js'
 
 type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
@@ -27,12 +27,7 @@ const feature = composer.chatType('private')
 const client = new SpeechClient()
 
 feature.on('message::url', logHandle('command-link'), async (ctx) => {
-  if (ctx.message.text) {
-    getLinkContent(ctx.message.text, ctx)
-
-    ctx.reply('Analizing your link...')
-    ctx.chatAction = 'typing'
-  }
+  return ctx.conversation.enter(LINK_CONVERSATION)
 }) // messages with URL in text or caption (photos, etc)
 
 feature.on('message', logHandle('command-any'), async (ctx) => {
@@ -102,14 +97,15 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   }
   else if (ctx.message.text) {
     try {
-      // Generate the embedding for the incoming text
-      const embedding = await embed(ctx.message.text)
+      // // Generate the embedding for the incoming text
+      // const embedding = await embed(ctx.message.text)
 
-      const similarThoughts = await findSimilarEmbeddings(ctx.from.id, embedding)
-      const similarThoughtsString = similarThoughts.map(thought => `ID: ${thought.id}, Content: ${thought.content}`).join('\n')
+      // const similarThoughts = await findSimilarEmbeddings(ctx.from.id, embedding)
+      // const similarThoughtsString = similarThoughts.map(thought => `ID: ${thought.id}, Content: ${thought.content}`).join('\n')
 
       // Reply with the similar thoughts
-      await ctx.reply(`You sent a text. Here are the top similar thoughts:\n${similarThoughtsString}`)
+      // await ctx.reply(`You sent a text. Here are the top similar thoughts:\n${similarThoughtsString}`)
+      await ctx.reply(`You sent a text. Here are the top similar thoughts`)
     }
     catch (error) {
       console.error('Error handling incoming text:', error)

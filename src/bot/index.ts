@@ -1,6 +1,7 @@
 import { autoChatAction } from '@grammyjs/auto-chat-action'
 import { hydrate } from '@grammyjs/hydrate'
 import { hydrateReply, parseMode } from '@grammyjs/parse-mode'
+import { conversations } from '@grammyjs/conversations'
 import type { BotConfig } from 'grammy'
 import { PrismaAdapter } from '@grammyjs/storage-prisma'
 import { Bot as TelegramBot, session } from 'grammy'
@@ -21,6 +22,7 @@ import {
 import { errorHandler } from '#root/bot/handlers/index.js'
 import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { updateLogger } from '#root/bot/middlewares/index.js'
+import { linkConversation } from '#root/bot/conversations/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
@@ -54,7 +56,9 @@ export function createBot(token: string, options: Options) {
     }),
   )
   protectedBot.use(i18n)
-
+  // Conversations
+  protectedBot.use(conversations())
+  protectedBot.use(linkConversation())
   // Handlers
   protectedBot.use(welcomeFeature)
   protectedBot.use(anyFeature)
