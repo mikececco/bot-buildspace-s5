@@ -1,7 +1,7 @@
 import { config } from '#root/config.js'
 import { handleTextRequest } from '#root/bot/services/generate-text-service.js'
 
-export async function getLinkContent(text: string, ctx: any): Promise<string> {
+export async function getLinkContent(text: string): Promise<string> {
   const baseUrl = 'https://r.jina.ai/'
   const headers = {
     'Accept': 'application/json',
@@ -11,7 +11,6 @@ export async function getLinkContent(text: string, ctx: any): Promise<string> {
   }
 
   const finishedUrl = baseUrl + text
-  console.log(ctx)
 
   try {
     console.log('Request URL:', finishedUrl)

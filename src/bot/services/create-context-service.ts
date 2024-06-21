@@ -10,7 +10,7 @@ export async function createContext(ctx: any, dataSummary?: CreateThoughtInput, 
 
   // If dataSummary is not provided, fetch link content from message text
   if (!dataSummary && !linkContent) {
-    linkContent = await getLinkContent(ctx.message.text, ctx)
+    linkContent = await getLinkContent(ctx.message.text)
     dataSummary = {
       telegramId: ctx.from.id,
       username: ctx.from.username || 'Unknown',
