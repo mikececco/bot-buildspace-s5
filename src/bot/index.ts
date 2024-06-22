@@ -22,7 +22,11 @@ import {
 import { errorHandler } from '#root/bot/handlers/index.js'
 import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { updateLogger } from '#root/bot/middlewares/index.js'
-import { imageConversation, linkConversation } from '#root/bot/conversations/index.js'
+import {
+  documentConversation,
+  imageConversation,
+  linkConversation,
+} from '#root/bot/conversations/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
@@ -60,6 +64,7 @@ export function createBot(token: string, options: Options) {
   protectedBot.use(conversations())
   protectedBot.use(linkConversation())
   protectedBot.use(imageConversation())
+  protectedBot.use(documentConversation())
   // Handlers
   protectedBot.use(welcomeFeature)
   protectedBot.use(anyFeature)

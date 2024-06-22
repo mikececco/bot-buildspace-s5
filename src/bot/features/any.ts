@@ -8,7 +8,11 @@ import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { createOrFindUser } from '#root/prisma/create-user.js'
 import { findSimilarEmbeddings } from '#root/prisma/embedding.js'
-import { IMAGE_CONVERSATION, LINK_CONVERSATION } from '#root/bot/conversations/index.js'
+import {
+  DOCUMENT_CONVERSATION,
+  IMAGE_CONVERSATION,
+  LINK_CONVERSATION,
+} from '#root/bot/conversations/index.js'
 import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
 
@@ -47,14 +51,14 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     try {
       // // Generate the embedding for the incoming text
       ctx.chatAction = 'typing'
-      const question = ctx.message.text
-      const embedding = await embed(question)
-      const similarThoughts = await findSimilarEmbeddings(ctx, embedding)
+      // const question = ctx.message.text
+      // const embedding = await embed(question)
+      // const similarThoughts = await findSimilarEmbeddings(ctx, embedding)
 
-      const completed = await completion(similarThoughts, question)
+      // const completed = await completion(similarThoughts, question)
 
-      await ctx.reply(completed)
-      // await ctx.reply(`From: ${similarThoughts}`)
+      // await ctx.reply(completed)
+      await ctx.reply(`From`)
     }
     catch (error) {
       console.error('Error handling incoming text:', error)
@@ -65,7 +69,8 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     ctx.reply('You sent an audio file.')
   }
   else if (ctx.message.document) {
-    ctx.reply('You sent a document.')
+    ctx.reply('You sent a document file.')
+    return ctx.conversation.enter(DOCUMENT_CONVERSATION)
   }
   else if (ctx.message.video) {
     ctx.reply('You sent a video.')
