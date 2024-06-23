@@ -2,6 +2,7 @@ import { Composer } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 // import { createSummary } from '#root/prisma/create-summary.js'
+import { deleteSession } from '#root/prisma/destroy-session.js'
 // import type { CreateSummaryInput } from '#root/prisma/create-summary.js'
 // import { createThoughtSummary } from '#root/prisma/create-thought-summary.js'
 import { getThoughtsOfDay } from '#root/prisma/get-thoughts.js'
@@ -13,6 +14,11 @@ const feature = composer.chatType('private')
 
 feature.command('start', logHandle('command-start'), (ctx) => {
   return ctx.reply(ctx.t('welcome'))
+})
+
+feature.command('destroy', logHandle('command-destroy'), (ctx) => {
+  deleteSession('352550606')
+  return ctx.reply('Deleted')
 })
 
 // feature.command('summary', logHandle('command-summary'), async (ctx) => {

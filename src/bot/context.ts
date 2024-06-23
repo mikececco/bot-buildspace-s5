@@ -9,7 +9,7 @@ import type { Logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
 
 export interface SessionData {
-  // field?: string;
+  counter: number
 }
 
 interface ExtendedContextFlavor {

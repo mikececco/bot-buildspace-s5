@@ -51,14 +51,14 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     try {
       // // Generate the embedding for the incoming text
       ctx.chatAction = 'typing'
-      // const question = ctx.message.text
-      // const embedding = await embed(question)
-      // const similarThoughts = await findSimilarEmbeddings(ctx, embedding)
+      const question = ctx.message.text
+      const embedding = await embed(question)
+      const similarThoughts = await findSimilarEmbeddings(ctx, embedding)
 
-      // const completed = await completion(similarThoughts, question)
+      const completed = await completion(similarThoughts, question)
 
-      // await ctx.reply(completed)
-      await ctx.reply(`From`)
+      await ctx.reply(completed)
+      // await ctx.reply(`From`)
     }
     catch (error) {
       console.error('Error handling incoming text:', error)

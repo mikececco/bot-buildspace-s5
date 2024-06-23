@@ -12,7 +12,7 @@ import { findSimilarEmbeddings } from '#root/prisma/embedding.js'
 import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
 import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
-import { getDocument } from '#root/bot/services/get-document-service.js'
+import { getDocument } from '#root/bot/services/get-bookmark-service.js'
 import { config } from '#root/config.js'
 
 export const DOCUMENT_CONVERSATION = 'document'
@@ -21,35 +21,17 @@ export function documentConversation() {
   return createConversation(
     async (conversation: Conversation<Context>, ctx: Context) => {
       if (ctx.from) {
-        await ctx.reply('Analyzing your document...')
+        getDocument(ctx)
+
+        await ctx.reply('Analyzing your document, it might take a while...')
         ctx.chatAction = 'typing'
-        // getDocument(ctx)
-        // const prompt = `
-        // Extract the following bookmark export file as the following JSON object:
-        // ${bookmarksJson}
-        // `
+        await conversation.sleep(200)
+        await ctx.reply('I will text you when I will be done')
+        ctx.chatAction = 'typing'
 
-        // const imageDataPart: InlineDataPart = {
-        //   inlineData: {
-        //     data: Buffer.from(response.data).toString('base64'),
-        //     mimeType: 'text/html', // Set the correct mime type for your file
-        //   },
-        // }
-        // const model = 'gemini-pro-vision' // Corrected model name
-        // const generatedContent = await handleGenerateContentRequest(
-        //   config.GOOGLE_AI,
-        //   prompt,
-        //   imageDataPart,
-        //   model,
-        // )
-
-        // const dataSummary: CreateThoughtInput = {
-        //   telegramId: ctx.from.id,
-        //   username: ctx.from.username || 'Unknown',
-        //   content: generatedContent,
-        // }
-
+        await conversation.sleep(1000)
         // createContext(ctx, dataSummary, generatedContent)
+        await ctx.reply('Document ready your document...')
 
         let shouldExit = false
 
@@ -74,10 +56,10 @@ export function documentConversation() {
                   const question = questionCtx.message.text
                   const embedding = await embed(question)
                   const similarThoughts = await findSimilarEmbeddings(questionCtx, embedding)
+                  console.log(similarThoughts)
+                  // const completed = await completion(similarThoughts, question)
 
-                  const completed = await completion(similarThoughts, question)
-
-                  await questionCtx.reply(completed)
+                  // await questionCtx.reply(completed)
                 }
                 shouldExit = true
                 break

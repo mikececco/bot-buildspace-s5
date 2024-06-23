@@ -8,6 +8,7 @@ export async function getLinkContent(text: string): Promise<string> {
     'Authorization': `Bearer ${config.JINA}`,
     'X-With-Links-Summary': 'true',
     'X-With-Images-Summary': 'true',
+    'X-No-Cache': 'true',
   }
 
   const finishedUrl = baseUrl + text

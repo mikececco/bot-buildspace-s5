@@ -13,15 +13,24 @@ const pool = new Pool({
   max: 10, // maximum number of clients in the pool
 })
 
-export async function saveEmbedding(telegramId: number, username: string, content: string, embedding: number[], thoughtId: number) {
-  const vectorEmbedding = pgvector.toSql(embedding)
+export interface CreateEmbeddingInput {
+  content: string
+  embedding?: any // Adjust type based on your vector implementation
+  telegramId: number
+  username: string
+  thoughtId?: number
+  bookmarkId?: number
+}
+
+export async function saveEmbedding(data: CreateEmbeddingInput) {
+  const vectorEmbedding = pgvector.toSql(data.embedding)
   console.log('GONNA INSERT TO EMBEDDINGSS')
 
   try {
     // Find the user by telegramId
     let user = await prisma.user.findUnique({
       where: {
-        telegramId,
+        telegramId: data.telegramId,
       },
     })
 
@@ -29,17 +38,18 @@ export async function saveEmbedding(telegramId: number, username: string, conten
     if (!user) {
       user = await prisma.user.create({
         data: {
-          telegramId,
-          username,
+          telegramId: data.telegramId,
+          username: data.username || 'username',
         },
       })
     }
 
     const thought = await prisma.embedding.create({
       data: {
-        content,
-        thoughtId,
+        content: data.content,
         userId: user.id,
+        thoughtId: data.thoughtId ?? null,
+        bookmarkId: data.bookmarkId ?? null,
       },
     })
 
@@ -74,7 +84,8 @@ export async function saveEmbedding(telegramId: number, username: string, conten
 interface EmbeddingsMap {
   [embeddingId: number]: {
     content: string
-    thoughtId: number
+    thoughtId?: number
+    bookmarkId?: number
     // Add other properties as needed
   }
 }
@@ -114,14 +125,27 @@ export async function findSimilarEmbeddings(ctx: any, embedding: number[]) {
       const embedding = res.rows[i]
       const embeddingId = embedding.id
       const content = embedding.content
-      const thoughtId = embedding.thoughtId
+      let thoughtId = embedding.thoughtId
+      const bookmarkId = embedding.bookmarkId
 
-      console.log(`Embedding ID: ${embeddingId}, Content: ${content}, Thought ID: ${thoughtId}`)
+      // Determine whether to use thoughtId or bookmarkId
+      if (thoughtId !== null && thoughtId !== undefined) {
+        console.log(`Thought ID: ${thoughtId}`)
+      }
+      else if (bookmarkId !== null && bookmarkId !== undefined) {
+        console.log(`Bookmark ID: ${bookmarkId}`)
+        thoughtId = null // Ensure thoughtId is null if using bookmarkId
+      }
+      else {
+        console.log('No valid Thought ID or Bookmark ID found.')
+        continue // Skip this iteration if neither thoughtId nor bookmarkId is present
+      }
 
       // Build the structure of embeddingsMap
       embeddingsMap[embeddingId] = {
         content,
         thoughtId,
+        bookmarkId,
       }
     }
     if (embeddingsMap) {

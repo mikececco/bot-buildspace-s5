@@ -24,6 +24,7 @@ model User {
   createdAt  DateTime  @default(now()) @map("created_at")
   thoughts   Thought[] // One-to-many relationship with Thought
   embeddings   Embedding[] // One-to-many relationship with Thought
+  bookmarks   Bookmark[] // One-to-many relationship with Thought
   // summaries  Summary[] // One-to-many relationship with Summary
 
   @@map("users")
@@ -33,7 +34,7 @@ model Thought {
   id        Int      @id @default(autoincrement())
   content   String
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   updatedAt DateTime @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
   embeddings   Embedding[] // One-to-many relationship with Thought
@@ -43,19 +44,33 @@ model Thought {
 }
 
 model Embedding {
-  id        Int      @id @default(autoincrement())
-  content   String
-  embedding Unsupported("vector")? // Store embedding as an array of floats
-  userId    Int      @default(1)
-  user      User     @relation(fields: [userId], references: [id])
-  thoughtId    Int
-  thought      Thought     @relation(fields: [thoughtId], references: [id])
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          Int       @id @default(autoincrement())
+  content     String
+  embedding   Unsupported("vector")? // Store embedding as an array of floats
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  thoughtId   Int?      // Nullable foreign key for Thought
+  thought     Thought?  @relation(fields: [thoughtId], references: [id])
+  bookmarkId  Int?      // Nullable foreign key for Bookmark
+  bookmark    Bookmark? @relation(fields: [bookmarkId], references: [id])
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@map("embeddings")
 }
 
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  list   String
+  link   String      
+  userId    Int      @default(1)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  embeddings   Embedding[] // One-to-many relationship with Thought
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("bookmarks")
+}
 // model Summary {
 //   id        Int      @id @default(autoincrement())
 //   content   String

@@ -4,6 +4,7 @@ import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
 import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
 import { createThought } from '#root/prisma/create-thought.js'
 import { saveEmbedding } from '#root/prisma/embedding.js'
+import type { CreateEmbeddingInput } from '#root/prisma/embedding.js'
 
 export async function createContext(ctx: any, dataSummary?: CreateThoughtInput, content?: any) {
   let linkContent = content // Assign provided content to linkContent if available
@@ -29,7 +30,15 @@ export async function createContext(ctx: any, dataSummary?: CreateThoughtInput, 
     const embedding = await embed(information)
     if (embedding && thought) {
       console.log('SAVING TO EMBEDDING')
-      await saveEmbedding(ctx.from.id, ctx.from.username || 'Unknown', information, embedding, thought.id)
+
+      const embeddingData: CreateEmbeddingInput = {
+        telegramId: ctx.from.id,
+        username: ctx.from.username || 'Unknown',
+        content: information,
+        embedding,
+        thoughtId: thought.id,
+      }
+      await saveEmbedding(embeddingData)
     }
   }
 }
