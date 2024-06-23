@@ -28,8 +28,8 @@ export async function getLinkContent(text: string): Promise<string> {
     }
 
     const responseData = await response.json()
-    return responseData.data.content
-    // return generateLinkSummary(responseData.data.content, ctx)
+    // return responseData.data.content
+    return await generateLinkSummary(responseData.data.content)
   }
   catch (error) {
     console.error('Error processing long-running operation:', error)
@@ -38,10 +38,10 @@ export async function getLinkContent(text: string): Promise<string> {
   }
 }
 
-export async function generateLinkSummary(linkContent: string, ctx: any) {
+export async function generateLinkSummary(linkContent: string) {
   const model = 'gemini-1.5-flash' // Corrected model name
   const prompt = `
-  Summarize the content extensively so that I can retrieve it when I need it, and translate to english if its in another language than english.
+  Summarize the content extensively, it will probably be a description of an app, so that I can retrieve it when I need it, and translate to english if its in another language than english.
   Content: ${linkContent}
   `
   const generatedContent = await handleTextRequest(
@@ -49,6 +49,5 @@ export async function generateLinkSummary(linkContent: string, ctx: any) {
     prompt,
     model,
   )
-  await ctx.reply('Link analyzed.')
-  await ctx.reply(generatedContent)
+  return generatedContent
 }

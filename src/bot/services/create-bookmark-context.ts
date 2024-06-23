@@ -18,7 +18,6 @@ export async function createBookmarkContext(ctx: any, dataSummary: CreateBookmar
     // Process each string in arrayStringsContent
     for (const information of arrayStringsContent) {
       const embedding = await embed(information)
-      console.log('SAVING TO EMBEDDING')
 
       const embeddingData: CreateEmbeddingInput = {
         telegramId: ctx.from.id,

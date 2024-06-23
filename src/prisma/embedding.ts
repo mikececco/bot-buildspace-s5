@@ -44,7 +44,7 @@ export async function saveEmbedding(data: CreateEmbeddingInput) {
       })
     }
 
-    const thought = await prisma.embedding.create({
+    const embedding = await prisma.embedding.create({
       data: {
         content: data.content,
         userId: user.id,
@@ -58,15 +58,7 @@ export async function saveEmbedding(data: CreateEmbeddingInput) {
       UPDATE embeddings
       SET embedding = $1::vector
       WHERE id = $2
-    `, [vectorEmbedding, thought.id])
-
-    // Return the created thought
-    const updatedThought = await prisma.thought.findUnique({
-      where: {
-        id: thought.id,
-      },
-    })
-    return updatedThought
+    `, [vectorEmbedding, embedding.id])
   }
   catch (error) {
     console.error('Error creating thought:', error)
@@ -111,7 +103,7 @@ export async function findSimilarEmbeddings(ctx: any, embedding: number[]) {
     const vectorEmbedding = pgvector.toSql(embedding)
 
     const res = await pool.query(`
-      SELECT id, content, "thoughtId"
+      SELECT id, content, "thoughtId", "bookmarkId"
       FROM embeddings
       WHERE "userId" = $1
       ORDER BY embedding <-> $2::vector

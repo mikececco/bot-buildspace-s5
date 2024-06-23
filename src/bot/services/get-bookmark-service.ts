@@ -62,7 +62,7 @@ function extractLinksFromDlDt(htmlContent: string, limitPerBookmark: number): Re
   return bookmarks
 }
 
-export async function getDocument(ctx: Context, limitPerBookmark: number = 5) {
+export async function getDocument(ctx: Context, limitPerBookmark: number = 15) {
   const file = await ctx.getFile() // valid for at least 1 hour
 
   if (!file) {

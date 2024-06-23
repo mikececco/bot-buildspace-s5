@@ -29,10 +29,11 @@ export function documentConversation() {
         await ctx.reply('I will text you when I will be done')
         ctx.chatAction = 'typing'
 
-        await conversation.sleep(1000)
+        await conversation.sleep(10000)
         // createContext(ctx, dataSummary, generatedContent)
-        await ctx.reply('Document ready your document...')
+        await ctx.reply('Document almost ready...')
 
+        await conversation.sleep(10000)
         let shouldExit = false
 
         while (!shouldExit) {
@@ -56,10 +57,9 @@ export function documentConversation() {
                   const question = questionCtx.message.text
                   const embedding = await embed(question)
                   const similarThoughts = await findSimilarEmbeddings(questionCtx, embedding)
-                  console.log(similarThoughts)
-                  // const completed = await completion(similarThoughts, question)
-
-                  // await questionCtx.reply(completed)
+                  const completed = await completion(similarThoughts, question)
+                  await questionCtx.reply(completed)
+                  await questionCtx.reply(`${similarThoughts}`)
                 }
                 shouldExit = true
                 break
