@@ -15,6 +15,8 @@ import {
 } from '#root/bot/conversations/index.js'
 import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
+import { sendInvoice } from '#root/bot/services/payment-service.js'
+import type { SendInvoiceParams } from '#root/bot/services/payment-service.js'
 
 type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
@@ -69,7 +71,26 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     ctx.reply('You sent an audio file.')
   }
   else if (ctx.message.document) {
-    return ctx.conversation.enter(DOCUMENT_CONVERSATION)
+    // Example usage
+    const exampleParams: SendInvoiceParams = {
+      chatId: ctx.from.id,
+      title: 'DeBookmark',
+      description: 'AI-expenses contribution',
+      payload: 'initial_contribution',
+      providerToken: '284685063:TEST:OTg1YjMwM2U1MTU5',
+      startParameter: 'subscription',
+      currency: 'EUR',
+      prices: [
+        { label: 'Initial fee', amount: 100 }, // amount is in the smallest units of the currency (e.g., cents)
+      ],
+    }
+
+    const invoiceRes = await sendInvoice(exampleParams)
+    console.log(JSON.stringify(invoiceRes, null, 2))
+    // .then(response => console.log(response))
+    // .catch(error => console.error(error))
+    return ctx.reply('You sent a document.')
+    // return ctx.conversation.enter(DOCUMENT_CONVERSATION)
   }
   else if (ctx.message.video) {
     ctx.reply('You sent a video.')
@@ -138,6 +159,12 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   else {
     ctx.reply('Unknown file type or no file sent.')
   }
+})
+
+feature.on('pre_checkout_query', logHandle('command-payment-query'), async (ctx) => {
+  console.log('Update on payment.')
+  console.log(ctx)
+  // ctx.answerPreCheckoutQuery(true)
 })
 
 export { composer as anyFeature }

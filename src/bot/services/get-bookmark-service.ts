@@ -18,7 +18,7 @@ interface Bookmark {
   name: string
 }
 
-function extractLinksFromDlDt(htmlContent: string, limitPerBookmark: number): Bookmark[] {
+function extractLinksFromDlDt(htmlContent: string): Bookmark[] {
   const $ = cheerio.load(htmlContent)
   const bookmarks: Bookmark[] = []
   let currentFolder: string | null = null
@@ -33,7 +33,7 @@ function extractLinksFromDlDt(htmlContent: string, limitPerBookmark: number): Bo
       if (url) {
         bookmarks.push({ folder: currentFolder, url, name })
         // Check if we have reached the limit for this folder
-        if (bookmarks.filter(bookmark => bookmark.folder === currentFolder).length >= limitPerBookmark) {
+        if (bookmarks.filter(bookmark => bookmark.folder === currentFolder)) {
           currentFolder = null // Reset current folder to stop adding more URLs to this folder
         }
       }
@@ -43,7 +43,7 @@ function extractLinksFromDlDt(htmlContent: string, limitPerBookmark: number): Bo
   return bookmarks
 }
 
-export async function getDocument(ctx: Context, limitPerBookmark: number = 200) {
+export async function getDocument(ctx: Context) {
   const file = await ctx.getFile() // valid for at least 1 hour
 
   if (!file) {
@@ -57,7 +57,7 @@ export async function getDocument(ctx: Context, limitPerBookmark: number = 200) 
   })
 
   const htmlContent = arrayBufferToString(response.data)
-  const links = extractLinksFromDlDt(htmlContent, limitPerBookmark)
+  const links = extractLinksFromDlDt(htmlContent)
   const linksJson = JSON.stringify(links, null, 2)
 
   // Save each bookmark
