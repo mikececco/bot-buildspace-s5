@@ -3,7 +3,7 @@ import { Composer } from 'grammy'
 import { SpeechClient } from '@google-cloud/speech'
 import type { protos } from '@google-cloud/speech'
 import type { Voice } from '@grammyjs/types'
-import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
+// import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
 import { getTranscript } from '#root/bot/services/get-transcript-service.js'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
@@ -19,14 +19,14 @@ import { completion } from '#root/bot/services/completion-service.js'
 import { sendInvoice } from '#root/bot/services/payment-service.js'
 import type { SendInvoiceParams } from '#root/bot/services/payment-service.js'
 
-type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
+// type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
 const composer = new Composer<Context>()
 
 const feature = composer.chatType('private')
 
 // Creates a client
-const client = new SpeechClient()
+// const client = new SpeechClient()
 
 feature.on('message::url', logHandle('command-link'), async (ctx) => {
   return ctx.conversation.enter(LINK_CONVERSATION)
@@ -115,32 +115,32 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
 
     if (duration !== undefined && duration < 60 && fileId !== undefined) {
       try {
-        const config: IRecognitionConfig = {
-          model: 'latest_short',
-          encoding: 'OGG_OPUS',
-          sampleRateHertz: 48000,
-          audioChannelCount: 1,
-          enableWordTimeOffsets: true,
-          enableWordConfidence: true,
-          languageCode: 'it-IT',
-        }
+        // const config: IRecognitionConfig = {
+        //   model: 'latest_short',
+        //   encoding: 'OGG_OPUS',
+        //   sampleRateHertz: 48000,
+        //   audioChannelCount: 1,
+        //   enableWordTimeOffsets: true,
+        //   enableWordConfidence: true,
+        //   languageCode: 'it-IT',
+        // }
 
-        const gcsUri = await uploadFileToGCS(ctx, fileId)
+        // const gcsUri = await uploadFileToGCS(ctx, fileId)
 
-        const audio = {
-          uri: gcsUri,
-        }
+        // const audio = {
+        //   uri: gcsUri,
+        // }
 
-        const request = {
-          config,
-          audio,
-        }
+        // const request = {
+        //   config,
+        //   audio,
+        // }
 
-        // Start the long-running recognition operation
-        const [operation] = await client.longRunningRecognize(request)
+        // // Start the long-running recognition operation
+        // const [operation] = await client.longRunningRecognize(request)
 
-        // Perform the recognition asynchronously in the background
-        getTranscript(operation, ctx)
+        // // Perform the recognition asynchronously in the background
+        // getTranscript(operation, ctx)
 
         ctx.reply('Audio received.')
         ctx.chatAction = 'typing'
