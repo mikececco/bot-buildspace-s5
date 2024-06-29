@@ -69,7 +69,7 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     }
   }
   else if (ctx.message.audio) {
-    ctx.reply('You sent an audio file.')
+    ctx.reply('You sent an audio.')
   }
   else if (ctx.message.document) {
     // Example usage
