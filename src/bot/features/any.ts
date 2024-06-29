@@ -1,3 +1,4 @@
+import { config } from 'node:process'
 import { Composer } from 'grammy'
 import { SpeechClient } from '@google-cloud/speech'
 import type { protos } from '@google-cloud/speech'

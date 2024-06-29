@@ -33,6 +33,7 @@ function createConfigFromEnvironment(environment: NodeJS.ProcessEnv) {
       .default([]),
     BOT_ADMINS: z.array(z.number()).default([]),
     GOOGLE_AI: z.string(),
+    STRIPE_TEST: z.string(),
     JINA: z.string(),
   })
 
