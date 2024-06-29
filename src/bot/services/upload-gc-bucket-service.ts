@@ -12,7 +12,7 @@ import type {
 const storage = new Storage()
 
 const bucketName = 'buildspace-project-audios' // Replace with your GCS bucket name
-const outputDir = './downloaded_audio' // You can specify any directory path here
+const outputDir = '#root/downloaded_audio' // You can specify any directory path here
 
 // Ensure the directory exists, create it if it doesn't
 if (!fs.existsSync(outputDir)) {
