@@ -1,19 +1,11 @@
-import { Buffer } from 'node:buffer'
-import * as cheerio from 'cheerio'
 import { createConversation } from '@grammyjs/conversations'
-import axios from 'axios'
 import type { Conversation } from '@grammyjs/conversations'
-import type { InlineDataPart } from '@google/generative-ai'
 import type { Context } from '#root/bot/context.js'
-import type { CreateThoughtInput } from '#root/prisma/create-thought.js'
 import { editExpenseKeyboard } from '#root/bot/keyboards/index.js'
-import { createContext } from '#root/bot/services/create-context-service.js'
 import { findSimilarEmbeddings } from '#root/prisma/embedding.js'
 import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
-import { handleGenerateContentRequest } from '#root/bot/services/google-ai-service.js'
 import { getDocument } from '#root/bot/services/get-bookmark-service.js'
-import { config } from '#root/config.js'
 
 export const DOCUMENT_CONVERSATION = 'document'
 
@@ -21,32 +13,26 @@ export function documentConversation() {
   return createConversation(
     async (conversation: Conversation<Context>, ctx: Context) => {
       if (ctx.from) {
-        getDocument(ctx)
+        const count = await getDocument(ctx)
 
-        await ctx.reply('Analyzing your document, it might take a while...')
-        ctx.chatAction = 'typing'
-        await conversation.sleep(200)
-        await ctx.reply('I will text you when I will be done')
+        // await ctx.reply('Analyzing your document, it might take a while...')
         ctx.chatAction = 'typing'
 
-        await conversation.sleep(10000)
+        await ctx.reply(`${count} bookmarks counted.`)
         // createContext(ctx, dataSummary, generatedContent)
-        await ctx.reply('Document almost ready...')
 
-        await conversation.sleep(10000)
         let shouldExit = false
 
         while (!shouldExit) {
           await ctx.reply('Choose your action', {
             reply_markup: editExpenseKeyboard,
           })
-          ctx = await conversation.wait()
+          const ctxFirst = await conversation.wait()
 
-          if (ctx.has('message:text')) {
-            switch (ctx.message.text) {
+          if (ctxFirst.has('message:text')) {
+            switch (ctxFirst.message.text) {
               case 'Ask 🎙️': {
                 ctx.chatAction = 'typing'
-                await conversation.sleep(200)
                 await ctx.reply('Ask your question through voice or text.', {
                   reply_markup: { remove_keyboard: true },
                 })
@@ -68,6 +54,32 @@ export function documentConversation() {
                 await ctx.reply('Added', {
                   reply_markup: { remove_keyboard: true },
                 })
+                shouldExit = true
+                break
+              }
+              case 'Organize 📍': {
+                ctxFirst.chatAction = 'typing'
+                const message = `*Tell us how you want to organize your bookmarks either through voice or text.*
+                  1. \`Just re-organize my bookmarks\`
+                  2. \`Re-organize my bookmarks based on the following categories AI, Personal finance, videos and tools\`
+                  3. \`Re-organize my bookmarks based on AI, Personal finance, videos and tools\`
+                  `
+                await ctx.reply(message, {
+                  parse_mode: 'Markdown',
+                  reply_markup: { remove_keyboard: true },
+                })
+
+                const questionCtx = await conversation.wait()
+                if (questionCtx.has('message:text')) {
+                  // questionCtx.chatAction = 'typing'
+                  // const question = questionCtx.message.text
+                  // const embedding = await embed(question)
+                  // const similarThoughts = await findSimilarEmbeddings(questionCtx, embedding)
+                  // const completed = await completion(similarThoughts, question)
+                  // await questionCtx.reply(completed)
+                  // await questionCtx.reply(`${similarThoughts}`)
+                  await questionCtx.reply('Helo')
+                }
                 shouldExit = true
                 break
               }

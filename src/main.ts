@@ -20,10 +20,11 @@ function onShutdown(cleanUp: () => Promise<void>) {
   process.on('SIGTERM', handleShutdown)
 }
 
+export const bot = createBot(config.BOT_TOKEN, {
+  prisma,
+})
+
 async function startPolling() {
-  const bot = createBot(config.BOT_TOKEN, {
-    prisma,
-  })
   // graceful shutdown
   onShutdown(async () => {
     await bot.stop()
@@ -41,9 +42,6 @@ async function startPolling() {
 }
 
 async function startWebhook() {
-  const bot = createBot(config.BOT_TOKEN, {
-    prisma,
-  })
   const server = createServer(bot)
   const serverManager = createServerManager(server)
 

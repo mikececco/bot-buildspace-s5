@@ -61,8 +61,10 @@ model Embedding {
 
 model Bookmark {
   id        Int      @id @default(autoincrement())
-  list   String
-  link   String      
+  content   String   @default("default content")
+  folder   String    @default("Bookmarks")
+  name   String    @default("My bookmark")
+  link   String      @unique
   userId    Int      @default(1)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   embeddings   Embedding[] // One-to-many relationship with Thought

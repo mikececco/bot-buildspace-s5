@@ -3,66 +3,47 @@ import axios from 'axios'
 import * as cheerio from 'cheerio'
 import type { Context } from '#root/bot/context.js'
 import { config } from '#root/config.js'
-import { saveBookmark } from '#root/prisma/bookmark.js'
 import type { CreateBookmarkInput } from '#root/prisma/bookmark.js'
-import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
-import { createBookmarkContext } from '#root/bot/services/create-bookmark-context.js'
+// import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
+// import { createBookmarkContext } from '#root/bot/services/create-bookmark-context.js'
+import { categorizeWithGoogleCloud } from '#root/bot/services/categorize-service.js'
 
 function arrayBufferToString(buffer: ArrayBuffer): string {
   return new TextDecoder().decode(buffer)
 }
 
-interface Link {
-  url: string
-  title: string
-}
-
 interface Bookmark {
-  links: Link[]
+  folder: string
+  url: string
+  name: string
 }
 
-function extractLinksFromDlDt(htmlContent: string, limitPerBookmark: number): Record<string, Bookmark> {
+function extractLinksFromDlDt(htmlContent: string, limitPerBookmark: number): Bookmark[] {
   const $ = cheerio.load(htmlContent)
-  const bookmarks: Record<string, Bookmark> = {}
+  const bookmarks: Bookmark[] = []
+  let currentFolder: string | null = null
 
-  function parseDl($dl: cheerio.Cheerio<cheerio.Element>, parentFolderName = '') {
-    $dl.children('dt').each((_: number, dtElement: cheerio.Element) => {
-      const $dt = $(dtElement)
-      const $a = $dt.children('a')
-      const $h3 = $dt.children('h3')
-
-      if ($h3.length) {
-        const folderName = $h3.text().trim()
-        const newFolderName = parentFolderName ? `${parentFolderName}/${folderName}` : folderName
-        const $nestedDl = $dt.next('dl')
-        if ($nestedDl.length) {
-          parseDl($nestedDl, newFolderName)
+  $('h3, a').each((_, element) => {
+    if (element.tagName === 'h3') {
+      currentFolder = $(element).text()
+    }
+    else if (element.tagName === 'a' && currentFolder) {
+      const url = $(element).attr('href')
+      const name = $(element).text()
+      if (url) {
+        bookmarks.push({ folder: currentFolder, url, name })
+        // Check if we have reached the limit for this folder
+        if (bookmarks.filter(bookmark => bookmark.folder === currentFolder).length >= limitPerBookmark) {
+          currentFolder = null // Reset current folder to stop adding more URLs to this folder
         }
       }
-      else if ($a.length) {
-        const href = $a.attr('href') ?? ''
-        const title = $a.text().trim()
-        const folderName = parentFolderName || 'Bookmarks'
-
-        if (!bookmarks[folderName]) {
-          bookmarks[folderName] = { links: [] }
-        }
-
-        if (bookmarks[folderName].links.length < limitPerBookmark) {
-          bookmarks[folderName].links.push({ url: href, title })
-        }
-      }
-    })
-  }
-
-  $('dl').each((_, dlElement) => {
-    parseDl($(dlElement))
+    }
   })
 
   return bookmarks
 }
 
-export async function getDocument(ctx: Context, limitPerBookmark: number = 15) {
+export async function getDocument(ctx: Context, limitPerBookmark: number = 200) {
   const file = await ctx.getFile() // valid for at least 1 hour
 
   if (!file) {
@@ -76,39 +57,36 @@ export async function getDocument(ctx: Context, limitPerBookmark: number = 15) {
   })
 
   const htmlContent = arrayBufferToString(response.data)
-  const bookmarks = extractLinksFromDlDt(htmlContent, limitPerBookmark)
-  const bookmarksJson = JSON.stringify(bookmarks, null, 2)
+  const links = extractLinksFromDlDt(htmlContent, limitPerBookmark)
+  const linksJson = JSON.stringify(links, null, 2)
 
   // Save each bookmark
+  let count = 0
   if (ctx.from) {
-    for (const [list, { links }] of Object.entries(bookmarks)) {
-      for (const link of links) {
-        const bookmarkData: CreateBookmarkInput = {
-          telegramId: ctx.from.id,
-          username: ctx.from.username || 'username',
-          list,
-          link: link.url, // Ensure link.url is used instead of link
-        }
-        // await ctx.reply(' List of bookmarks: ')
-        console.log(`${bookmarkData.list}, ${bookmarkData.link}`)
-
-        const linkContent = await getLinkContent(link.url)
-
-        await createBookmarkContext(ctx, bookmarkData, linkContent)
+    for (const link of links) {
+      // const linkContent = await getLinkContent(link.url)
+      const bookmarkData: CreateBookmarkInput = {
+        telegramId: ctx.from.id,
+        username: ctx.from.username || 'username',
+        content: '',
+        link: link.url,
+        name: link.name,
+        folder: link.folder,
       }
+      console.log(bookmarkData)
+      count += 1
+      // await createBookmarkContext(ctx, bookmarkData, linkContent)
+      // const lastCategory = await categorizeWithGoogleCloud(bookmarkData)
+      // console.log(lastCategory)
     }
   }
 
-  // Extract the first bookmark's JSON string
-  const firstBookmark = Object.values(bookmarks)[0] // Get the first bookmark object
-  if (!firstBookmark) {
-    throw new Error('No bookmarks found')
-  }
-  // const firstBookmarkJson = JSON.stringify(firstBookmark, null, 2)
-
-  // Reply with the first bookmark's JSON string
   // Save JSON to a file
-  const filePath = './extracted_bookmarks.json'
-  return fs.writeFileSync(filePath, bookmarksJson, 'utf8')
-  // return await ctx.reply(firstBookmarkJson)
+  const filePath = './extracted_links.json'
+  fs.writeFileSync(filePath, linksJson, 'utf8')
+
+  return count
+  // Optionally, you can also reply with the JSON string of the first link
+  // const firstLinkJson = JSON.stringify(links[0], null, 2)
+  // return await ctx.reply(firstLinkJson)
 }

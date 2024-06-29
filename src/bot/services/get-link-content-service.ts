@@ -33,7 +33,7 @@ export async function getLinkContent(text: string): Promise<string> {
   }
   catch (error) {
     console.error('Error processing long-running operation:', error)
-    throw new Error('Failed to fetch and process link content')
+    return ('Failed to fetch and process link content')
     // Handle error appropriately
   }
 }

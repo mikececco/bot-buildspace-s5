@@ -3,8 +3,10 @@ import { prisma } from '#root/prisma/index.js'
 export interface CreateBookmarkInput {
   telegramId: number
   username: string
-  list: string
+  content: string
   link: string
+  folder: string
+  name: string
 }
 
 export async function saveBookmark(data: CreateBookmarkInput) {
@@ -32,8 +34,10 @@ export async function saveBookmark(data: CreateBookmarkInput) {
     try {
       const bookmark = await prisma.bookmark.create({
         data: {
-          list: data.list,
+          content: data.content,
           link: data.link,
+          folder: data.folder,
+          name: data.name,
           userId,
         },
       })

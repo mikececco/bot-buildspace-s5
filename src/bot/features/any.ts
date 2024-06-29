@@ -69,7 +69,6 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     ctx.reply('You sent an audio file.')
   }
   else if (ctx.message.document) {
-    ctx.reply('You sent a document file.')
     return ctx.conversation.enter(DOCUMENT_CONVERSATION)
   }
   else if (ctx.message.video) {
