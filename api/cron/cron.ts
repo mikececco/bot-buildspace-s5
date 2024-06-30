@@ -4,7 +4,7 @@ import { bot } from '#root/main.js'
 
 const prisma = new PrismaClient()
 
-export async function GET(req: VercelRequest, res: VercelResponse) {
+export async function executeCronJob(ctx: any) {
   try {
     // Fetch all users
     const users = await prisma.user.findMany({
@@ -48,11 +48,11 @@ export async function GET(req: VercelRequest, res: VercelResponse) {
     }
 
     // Send results
-    res.status(200).json({ message: 'Cron job executed successfully', results })
+    ctx.response.body = { success: true }
   }
   catch (error) {
     console.error('An error occurred during cron execution:', error)
-    res.status(500).json({ error: 'An error occurred during cron execution' })
+    ctx.response.body = { success: false }
   }
   finally {
     await prisma.$disconnect()
