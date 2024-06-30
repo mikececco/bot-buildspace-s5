@@ -18,6 +18,8 @@ import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
 import { sendInvoice } from '#root/bot/services/payment-service.js'
 import type { SendInvoiceParams } from '#root/bot/services/payment-service.js'
+import { getDocument } from '#root/bot/services/get-bookmark-service.js'
+import { saveBookmarks } from '#root/prisma/bookmark.js'
 
 // type IRecognitionConfig = protos.google.cloud.speech.v1.IRecognitionConfig
 
@@ -73,24 +75,32 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
   }
   else if (ctx.message.document) {
     // Example usage
-    const exampleParams: SendInvoiceParams = {
-      chatId: ctx.from.id,
-      title: 'DeBookmark',
-      description: 'AI-expenses contribution',
-      payload: 'initial_contribution',
-      providerToken: '284685063:TEST:OTg1YjMwM2U1MTU5',
-      startParameter: 'subscription',
-      currency: 'EUR',
-      prices: [
-        { label: 'Initial fee', amount: 100 }, // amount is in the smallest units of the currency (e.g., cents)
-      ],
-    }
+    // const exampleParams: SendInvoiceParams = {
+    //   chatId: ctx.from.id,
+    //   title: 'DeBookmark',
+    //   description: 'AI-expenses contribution',
+    //   payload: 'initial_contribution',
+    //   providerToken: '284685063:TEST:OTg1YjMwM2U1MTU5',
+    //   startParameter: 'subscription',
+    //   currency: 'EUR',
+    //   prices: [
+    //     { label: 'Initial fee', amount: 100 }, // amount is in the smallest units of the currency (e.g., cents)
+    //   ],
+    // }
 
-    const invoiceRes = await sendInvoice(exampleParams)
-    console.log(JSON.stringify(invoiceRes, null, 2))
+    // const invoiceRes = await sendInvoice(exampleParams)
+    // console.log(JSON.stringify(invoiceRes, null, 2))
     // .then(response => console.log(response))
     // .catch(error => console.error(error))
-    return ctx.reply('You sent a document.')
+    // return ctx.reply('You sent a document.')
+
+    ctx.chatAction = 'typing'
+    const { count, bookmarksList } = await getDocument(ctx)
+    await ctx.reply(`${count} bookmarks counted and saved.`)
+
+    return saveBookmarks(bookmarksList)
+    // return await ctx.reply(`${count} bookmarks counted and saved.`)
+
     // return ctx.conversation.enter(DOCUMENT_CONVERSATION)
   }
   else if (ctx.message.video) {

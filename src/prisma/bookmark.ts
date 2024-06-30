@@ -62,3 +62,21 @@ export async function saveBookmark(data: CreateBookmarkInput) {
     await prisma.$disconnect()
   }
 }
+
+export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
+  try {
+    const result = await prisma.bookmark.createMany({
+      data: bookmarks,
+      skipDuplicates: true, // This option skips records that violate unique constraints
+    })
+    console.log(`Successfully saved ${result.count} bookmarks`)
+    return result
+  }
+  catch (error) {
+    console.error('Error saving bookmarks:', error)
+    throw error
+  }
+  finally {
+    await prisma.$disconnect()
+  }
+}
