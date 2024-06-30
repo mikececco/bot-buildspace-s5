@@ -4,7 +4,7 @@ import { bot } from '#root/main.js'
 
 const prisma = new PrismaClient()
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function GET(req: VercelRequest, res: VercelResponse) {
   try {
     // Fetch all users
     const users = await prisma.user.findMany({
