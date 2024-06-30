@@ -9,6 +9,14 @@ export interface CreateBookmarkInput {
   name: string
 }
 
+interface BookmarkWithUserId {
+  content: string
+  link: string
+  folder: string
+  name: string
+  userId: number
+}
+
 export async function saveBookmark(data: CreateBookmarkInput) {
   try {
     // Find the user by telegramId
@@ -32,6 +40,18 @@ export async function saveBookmark(data: CreateBookmarkInput) {
 
     // Save the bookmark
     try {
+      // Check if the link already exists for the user
+      const existingBookmark = await prisma.bookmark.findFirst({
+        where: {
+          userId,
+          link: data.link,
+        },
+      })
+
+      if (existingBookmark) {
+        throw new Error('Bookmark with this link already exists for this user.')
+      }
+
       const bookmark = await prisma.bookmark.create({
         data: {
           content: data.content,
@@ -65,10 +85,55 @@ export async function saveBookmark(data: CreateBookmarkInput) {
 
 export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
   try {
+    const bookmarksWithUserId: BookmarkWithUserId[] = []
+    for (const data of bookmarks) {
+      // Find the user by telegramId
+      let user = await prisma.user.findUnique({
+        where: {
+          telegramId: data.telegramId,
+        },
+      })
+
+      // If the user doesn't exist, create a new user
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            telegramId: data.telegramId,
+            username: data.username,
+          },
+        })
+      }
+
+      // Prepare bookmark data with userId
+      const userId = user.id
+
+      const existingBookmark = await prisma.bookmark.findFirst({
+        where: {
+          userId,
+          link: data.link,
+        },
+      })
+
+      if (existingBookmark) {
+        console.log(`Skipping bookmark with link '${data.link}' for user ${user.id} - already exists.`)
+        continue // Skip current iteration and proceed to next bookmark
+      }
+
+      // Prepare bookmark data with userId
+      bookmarksWithUserId.push({
+        content: data.content,
+        link: data.link,
+        folder: data.folder,
+        name: data.name,
+        userId,
+      })
+    }
+
     const result = await prisma.bookmark.createMany({
-      data: bookmarks,
+      data: bookmarksWithUserId,
       skipDuplicates: true, // This option skips records that violate unique constraints
     })
+
     console.log(`Successfully saved ${result.count} bookmarks`)
     return result
   }

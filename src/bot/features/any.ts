@@ -1,6 +1,7 @@
 import { config } from 'node:process'
 import { Composer } from 'grammy'
 import { SpeechClient } from '@google-cloud/speech'
+import axios from 'axios'
 import type { protos } from '@google-cloud/speech'
 import type { Voice } from '@grammyjs/types'
 // import { uploadFileToGCS } from '#root/bot/services/upload-gc-bucket-service.js'
@@ -29,6 +30,20 @@ const feature = composer.chatType('private')
 
 // Creates a client
 // const client = new SpeechClient()
+// async function sendStatusToWebhook(statusMessage: any) {
+//   try {
+//     const webhookUrl = 'https://vocal-sensible-hippo.ngrok-free.app/webhook' // Replace with your actual webhook URL
+//     const response = await axios.post(webhookUrl, {
+//       text: statusMessage,
+//     })
+
+//     console.log('Status sent to webhook:', response.data)
+//   }
+//   catch (error) {
+//     console.error('Error sending status to webhook:', error)
+//     // Handle webhook sending error as needed
+//   }
+// }
 
 feature.on('message::url', logHandle('command-link'), async (ctx) => {
   return ctx.conversation.enter(LINK_CONVERSATION)
@@ -74,34 +89,39 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     ctx.reply('You sent an audio.')
   }
   else if (ctx.message.document) {
-    // Example usage
-    // const exampleParams: SendInvoiceParams = {
-    //   chatId: ctx.from.id,
-    //   title: 'DeBookmark',
-    //   description: 'AI-expenses contribution',
-    //   payload: 'initial_contribution',
-    //   providerToken: '284685063:TEST:OTg1YjMwM2U1MTU5',
-    //   startParameter: 'subscription',
-    //   currency: 'EUR',
-    //   prices: [
-    //     { label: 'Initial fee', amount: 100 }, // amount is in the smallest units of the currency (e.g., cents)
-    //   ],
-    // }
-
-    // const invoiceRes = await sendInvoice(exampleParams)
-    // console.log(JSON.stringify(invoiceRes, null, 2))
-    // .then(response => console.log(response))
-    // .catch(error => console.error(error))
-    // return ctx.reply('You sent a document.')
-
+    await ctx.reply(`Analizing your document, please wait...`)
     ctx.chatAction = 'typing'
-    const { count, bookmarksList } = await getDocument(ctx)
-    await ctx.reply(`${count} bookmarks counted and saved.`)
+    try {
+      const { count, bookmarksList } = await getDocument(ctx)
+      await ctx.reply(`${count} bookmarks counted and saved.`)
 
-    return saveBookmarks(bookmarksList)
-    // return await ctx.reply(`${count} bookmarks counted and saved.`)
+      // Run saveBookmarks asynchronously
+      saveBookmarks(bookmarksList)
+        .then(() => {
+          console.error('Saved in saveBookmarks')
+        })
+        .catch((error) => {
+          console.error('Error in saveBookmarks:', error)
+          // Handle the error gracefully, notify the user or log the issue
+          // Example: ctx.reply('An error occurred while saving bookmarks.')
+        })
+      // Assuming webhook sending is somewhere else in your code
+      // If it's here, you should handle errors similarly
+      // Example: await sendToWebhook(data)
 
-    // return ctx.conversation.enter(DOCUMENT_CONVERSATION)
+      // Return success response or continue with other logic
+    }
+    catch (error) {
+      console.error('Error in saveBookmarks:', error)
+
+      // Handle the error gracefully, perhaps notify the user or log the issue
+      await ctx.reply('An error occurred while saving bookmarks. Please try again later.')
+
+      // Optionally, rethrow the error if you want to propagate it further
+      // throw error
+    }
+    await ctx.reply(`Tomorrow you will receive your first bookmarks to go through!`)
+    return await ctx.reply(`Want to do otherwise?`)
   }
   else if (ctx.message.video) {
     ctx.reply('You sent a video.')

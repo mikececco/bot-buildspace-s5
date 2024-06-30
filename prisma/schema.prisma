@@ -64,13 +64,13 @@ model Bookmark {
   content   String   @default("default content")
   folder   String    @default("Bookmarks")
   name   String    @default("My bookmark")
-  link   String      @unique
+  link   String
   userId    Int      @default(1)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   embeddings   Embedding[] // One-to-many relationship with Thought
   updatedAt DateTime @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
-
+  @@unique([userId, link])
   @@map("bookmarks")
 }
 // model Summary {

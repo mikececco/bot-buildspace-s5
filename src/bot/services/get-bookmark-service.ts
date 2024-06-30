@@ -41,8 +41,6 @@ function extractLinksFromDlDt(htmlContent: string): Bookmark[] {
 
 export async function getDocument(ctx: Context) {
   const file = await ctx.getFile() // valid for at least 1 hour
-  await ctx.reply(`Analizing your document, please wait...`)
-  ctx.chatAction = 'typing'
 
   if (!file) {
     throw new Error('No file received from Telegram')
@@ -56,8 +54,6 @@ export async function getDocument(ctx: Context) {
 
   const htmlContent = arrayBufferToString(response.data)
   const links = extractLinksFromDlDt(htmlContent)
-  // const linksJson = JSON.stringify(links, null, 2)
-
   // Save each bookmark
   let count = 0
   const bookmarksList: CreateBookmarkInput[] = []
@@ -75,18 +71,8 @@ export async function getDocument(ctx: Context) {
       console.log(bookmarkData)
       count += 1
       bookmarksList.push(bookmarkData)
-
-      // await createBookmarkContext(ctx, bookmarkData, linkContent)
-      // const lastCategory = await categorizeWithGoogleCloud(bookmarkData)
-      // console.log(lastCategory)
     }
   }
-  // // Save JSON to a file
-  // const filePath = './extracted_links.json'
-  // fs.writeFileSync(filePath, linksJson, 'utf8')
 
   return { count, bookmarksList }
-  // Optionally, you can also reply with the JSON string of the first link
-  // const firstLinkJson = JSON.stringify(links[0], null, 2)
-  // return await ctx.reply(firstLinkJson)
 }
