@@ -1,60 +1,56 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { PrismaClient } from '@prisma/client'
-import { bot } from '#root/main.js'
+// import { PrismaClient } from '@prisma/client'
+// import { InlineKeyboard } from 'grammy'
+// import { bot } from '#root/main.js'
 
-const prisma = new PrismaClient()
+// const prisma = new PrismaClient()
 
-export async function executeCronJob(ctx: any) {
-  try {
-    // Fetch all users
-    const users = await prisma.user.findMany({
-      include: { bookmarks: true },
-    })
+// export async function executeCronJob(ctx: any) {
+//   console.log('inside functionn')
+//   try {
+//     // Fetch all users
+//     const users = await prisma.user.findMany({
+//       include: { bookmarks: true },
+//     })
 
-    // Array to store results for each user
-    const results = []
+//     // Array to store results for each user
 
-    // Process each user
-    for (const user of users) {
-      // Calculate the number of days since the user was created
-      const currentDate = new Date()
-      const userCreationDate = new Date(user.createdAt)
-      const dayNumber = Math.floor((currentDate.getTime() - userCreationDate.getTime()) / (1000 * 60 * 60 * 24))
+//     // Process each user
+//     for (const user of users) {
+//       // Take only the first bookmark
+//       const firstBookmark = user.bookmarks[0]
+//       if (!firstBookmark)
+//         continue
+//       // Prepare the message for the first bookmark
+//       const markdownMessage = `**Bookmark 1:** [${firstBookmark.link}](${firstBookmark.link}) - ${firstBookmark.folder}`
+//       const bookmarkId = firstBookmark.id
+//       const saveCallbackData = `callback-save:${bookmarkId}`
+//       const deleteCallbackData = `callback-delete:${bookmarkId}`
 
-      // Determine the start index for bookmarks
-      const startIndex = (dayNumber * 3) % user.bookmarks.length
+//       const keyboard = new InlineKeyboard()
+//         .text('Save it', saveCallbackData)
+//         .row()
+//         .text('Delete it', deleteCallbackData)
+//       // const keyboard = new InlineKeyboard()
+//       //   .text('Save it', 'callback-save')
+//       //   .row()
+//       //   .text('Delete it', 'callback-delete')
+//         // .url('Telegram', 'telegram.org')
 
-      // Fetch three bookmarks
-      const bookmarks = user.bookmarks.slice(startIndex, startIndex + 3)
-
-      // If there are not enough bookmarks at the end, wrap around to the beginning
-      if (bookmarks.length < 3) {
-        bookmarks.push(...user.bookmarks.slice(0, 3 - bookmarks.length))
-      }
-
-      // Prepare messages for each bookmark
-      const messages = bookmarks.map((bookmark, index) => {
-        const markdownMessage = `**Bookmark ${index + 1}:** [${bookmark.link}](${bookmark.link}) - ${bookmark.folder}`
-        return markdownMessage
-      })
-
-      // Send messages to the user
-      for (const message of messages) {
-        await bot.api.sendMessage(user.id, message)
-      }
-
-      // Add bookmarks to results
-      results.push({ userId: user.id, bookmarks })
-    }
-
-    // Send results
-    ctx.response.body = { success: true }
-  }
-  catch (error) {
-    console.error('An error occurred during cron execution:', error)
-    ctx.response.body = { success: false }
-  }
-  finally {
-    await prisma.$disconnect()
-  }
-}
+//       await bot.api.sendMessage(
+//         Number(user.telegramId),
+//         markdownMessage,
+//         {
+//           reply_markup: keyboard,
+//           parse_mode: 'Markdown',
+//         },
+//       )
+//       console.log(ctx)
+//     }
+//   }
+//   catch (error) {
+//     console.error('An error occurred during cron execution:', error)
+//   }
+//   finally {
+//     await prisma.$disconnect()
+//   }
+// }
