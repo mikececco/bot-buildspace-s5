@@ -1,5 +1,5 @@
 import { config } from 'node:process'
-import { Composer } from 'grammy'
+import { Composer, InlineKeyboard } from 'grammy'
 import { SpeechClient } from '@google-cloud/speech'
 import axios from 'axios'
 import type { protos } from '@google-cloud/speech'
@@ -120,8 +120,12 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
       // Optionally, rethrow the error if you want to propagate it further
       // throw error
     }
-    await ctx.reply(`Tomorrow you will receive your first bookmarks to go through!`)
-    return await ctx.reply(`Want to do otherwise?`)
+    // await ctx.reply(`Tomorrow you will receive your first bookmarks to go through!`)
+    const button = new InlineKeyboard().webApp('Your library', 'https://bot-telegram-webapp.vercel.app/')
+
+    return await ctx.reply(`You can now access your library!`, {
+      reply_markup: button,
+    })
   }
   else if (ctx.message.video) {
     ctx.reply('You sent a video.')
@@ -196,6 +200,26 @@ feature.on('pre_checkout_query', logHandle('command-payment-query'), async (ctx)
   console.log('Update on payment.')
   console.log(ctx)
   // ctx.answerPreCheckoutQuery(true)
+})
+
+feature.callbackQuery(/callback-(save|delete):(\d+)/, logHandle('keyboard-bookmark-day-select'), async (ctx) => {
+  const action = ctx.match[1] // 'save' or 'delete'
+  const bookmarkId = Number(ctx.match[2]) // Extract the bookmark ID
+  if (action === 'save') {
+    // Handle save action for the bookmark with bookmarkId
+  }
+  else if (action === 'delete') {
+    // Handle delete action for the bookmark with bookmarkId
+  }
+  await ctx.answerCallbackQuery()
+
+  console.log(`User pressed ${action}`)
+  console.log(`On ${bookmarkId}`)
+})
+feature.callbackQuery('callback-delete', logHandle('keyboard-bookmark-day-select'), async (ctx) => {
+  const callbackData = ctx.callbackQuery.data
+
+  console.log(`User pressed ${callbackData}`)
 })
 
 export { composer as anyFeature }
