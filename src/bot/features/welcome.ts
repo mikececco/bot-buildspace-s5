@@ -28,7 +28,7 @@ feature.command('destroy', logHandle('command-destroy'), async (ctx) => {
   }
 })
 
-feature.command('destroy-user', logHandle('command-destroy'), (ctx) => {
+feature.command('bye', logHandle('command-destroy'), (ctx) => {
   try {
     // Assuming deleteSession is an asynchronous function
     deleteUser(352550606)

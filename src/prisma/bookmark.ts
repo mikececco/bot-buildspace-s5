@@ -12,6 +12,14 @@ export interface CreateBookmarkInput {
   name: string
   folderId?: number
 }
+export interface CreateBookmarkWithFolderInput {
+  telegramId: number
+  username: string
+  content: string
+  link: string
+  name: string
+  folder: string
+}
 
 interface BookmarkWithUserId {
   content: string
@@ -120,7 +128,7 @@ export async function getUserBookmarks(telegramId: number) {
   }
 }
 
-export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
+export async function saveBookmarks(bookmarks: CreateBookmarkWithFolderInput[]) {
   try {
     const userIds = await fetchOrCreateUsers(bookmarks)
 
@@ -141,7 +149,7 @@ export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
 
         const folderData: FolderInput = {
           userId,
-          name: data.name,
+          name: data.folder,
         }
         const folder = await createOrFindFolder(folderData)
 

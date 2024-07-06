@@ -12,10 +12,8 @@ export async function createOrFindFolder(data: FolderInput) {
       },
     })
 
-    // If the user doesn't exist, create a new user
     if (!user) {
-      console.log('Restart')
-      return
+      throw new Error(`User with id ${data.userId} not found`)
     }
 
     const userId = user.id
@@ -35,11 +33,14 @@ export async function createOrFindFolder(data: FolderInput) {
         },
       })
     }
+    else {
+      console.log(`Folder with name '${data.name}' already exists for user ${userId}`)
+    }
 
     return folder
   }
   catch (error) {
-    console.error('Error creating folder:', error)
+    console.error('Error creating or finding folder:', error)
     throw error
   }
   finally {

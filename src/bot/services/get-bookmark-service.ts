@@ -3,7 +3,7 @@ import axios from 'axios'
 import * as cheerio from 'cheerio'
 import type { Context } from '#root/bot/context.js'
 import { config } from '#root/config.js'
-import type { CreateBookmarkInput } from '#root/prisma/bookmark.js'
+import type { CreateBookmarkInput, CreateBookmarkWithFolderInput } from '#root/prisma/bookmark.js'
 // import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
 // import { createBookmarkContext } from '#root/bot/services/create-bookmark-context.js'
 
@@ -55,16 +55,17 @@ export async function getDocument(ctx: Context) {
   const links = extractLinksFromDlDt(htmlContent)
   // Save each bookmark
   let count = 0
-  const bookmarksList: CreateBookmarkInput[] = []
+  const bookmarksList: CreateBookmarkWithFolderInput[] = []
   if (ctx.from) {
     for (const link of links) {
       // const linkContent = await getLinkContent(link.url)
-      const bookmarkData: CreateBookmarkInput = {
+      const bookmarkData: CreateBookmarkWithFolderInput = {
         telegramId: ctx.from.id,
         username: ctx.from.username || 'username',
         content: '',
         link: link.url,
         name: link.name,
+        folder: link.folder,
       }
       console.log(bookmarkData)
       count += 1

@@ -79,7 +79,7 @@ model Bookmark {
 
 model Folder {
   id        Int      @id @default(autoincrement())
-  name   String   @default("Favourites")
+  name   String   @unique @default("Favourites")
   bookmarks   Bookmark[] // One-to-many relationship with Thought
   userId    Int      @default(1)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
