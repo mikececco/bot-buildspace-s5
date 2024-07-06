@@ -95,85 +95,6 @@ export async function saveBookmark(data: CreateBookmarkInput) {
   }
 }
 
-// export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
-//   try {
-//     const bookmarksWithUserId: BookmarkWithUserId[] = []
-//     for (const data of bookmarks) {
-//       // Find the user by telegramId
-//       let user = await prisma.user.findUnique({
-//         where: {
-//           telegramId: data.telegramId,
-//         },
-//       })
-
-//       // If the user doesn't exist, create a new user
-//       if (!user) {
-//         user = await prisma.user.create({
-//           data: {
-//             telegramId: data.telegramId,
-//             username: data.username,
-//           },
-//         })
-//       }
-
-//       // Prepare bookmark data with userId
-//       const userId = user.id
-
-//       const existingBookmark = await prisma.bookmark.findFirst({
-//         where: {
-//           userId,
-//           link: data.link,
-//         },
-//       })
-//       const { title, description } = await fetchMetadata(data.link)
-//       const combinedInfo = `
-//         Title: ${title}
-//         \n
-//         Description: ${description}
-//       `
-
-//       // const category = await categorizeWithGoogleCloud(data.link)
-//       // console.log(category)
-
-//       if (existingBookmark) {
-//         console.log(`Skipping bookmark with link '${data.link}' for user ${user.id} - already exists.`)
-//         continue // Skip current iteration and proceed to next bookmark
-//       }
-//       const folderData: FolderInput = {
-//         userId,
-//         name: data.name,
-//       }
-//       const folder = await createOrFindFolder(folderData)
-
-//       // Prepare bookmark data with userId
-//       if (folder) {
-//         bookmarksWithUserId.push({
-//           content: combinedInfo,
-//           link: data.link,
-//           folderId: folder.id,
-//           name: data.name,
-//           userId,
-//         })
-//       }
-//     }
-
-//     const result = await prisma.bookmark.createMany({
-//       data: bookmarksWithUserId,
-//       skipDuplicates: true, // This option skips records that violate unique constraints
-//     })
-
-//     console.log(`Successfully saved ${result.count} bookmarks`)
-//     return result
-//   }
-//   catch (error) {
-//     console.error('Error saving bookmarks:', error)
-//     throw error
-//   }
-//   finally {
-//     await prisma.$disconnect()
-//   }
-// }
-
 export async function getUserBookmarks(telegramId: number) {
   try {
     const user = await prisma.user.findUnique({
@@ -198,38 +119,6 @@ export async function getUserBookmarks(telegramId: number) {
     await prisma.$disconnect()
   }
 }
-
-// export async function getUserBookmarksFolders(telegramId: number) {
-//   try {
-//     const user = await prisma.user.findUnique({
-//       where: { telegramId },
-//     })
-
-//     if (!user) {
-//       throw new Error(`User with telegramId ${telegramId} not found`)
-//     }
-
-//     const folders = await prisma.bookmark.findMany({
-//       where: { userId: user.id },
-//       select: {
-//         folder: true,
-//       },
-//       distinct: ['folder'],
-//     })
-
-//     // Extract the folder names from the resulting objects
-//     const folderNames = folders.map(bookmark => bookmark.folder)
-
-//     return folderNames
-//   }
-//   catch (error) {
-//     console.error('Error getting user bookmarks:', error)
-//     throw error
-//   }
-//   finally {
-//     await prisma.$disconnect()
-//   }
-// }
 
 export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
   try {
@@ -256,12 +145,14 @@ export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
         }
         const folder = await createOrFindFolder(folderData)
 
-        return {
-          content: combinedInfo,
-          link: data.link,
-          folderId: folder.id,
-          name: data.name,
-          userId,
+        if (folder) {
+          return {
+            content: combinedInfo,
+            link: data.link,
+            folderId: folder.id,
+            name: data.name,
+            userId,
+          }
         }
       }),
     )
@@ -313,22 +204,3 @@ async function fetchOrCreateUsers(bookmarks: CreateBookmarkInput[]): Promise<num
 
   return userIds
 }
-
-// async function fetchMetadata(link: string): Promise<{ title: string, description: string }> {
-//   // Dummy implementation for fetching metadata
-//   return { title: 'Dummy Title', description: 'Dummy Description' }
-// }
-
-// async function findOrCreateFolder(userId: number, folderName: string) {
-//   let folder = await prisma.folder.findFirst({
-//     where: { userId, name: folderName },
-//   })
-
-//   if (!folder) {
-//     folder = await prisma.folder.create({
-//       data: { userId, name: folderName },
-//     })
-//   }
-
-//   return folder
-// }
