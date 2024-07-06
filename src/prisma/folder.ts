@@ -40,8 +40,8 @@ export async function createOrFindFolder(data: FolderInput) {
     return folder
   }
   catch (error) {
-    console.error('Error creating or finding folder:', error)
-    throw error
+    console.log('Error creating or finding folder:', error)
+    // throw error
   }
   finally {
     await prisma.$disconnect()

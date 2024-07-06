@@ -158,7 +158,7 @@ export async function saveBookmarks(bookmarks: CreateBookmarkWithFolderInput[]) 
             content: combinedInfo,
             link: data.link,
             folderId: folder.id,
-            name: data.name,
+            name: data.name || title,
             userId,
           }
         }
