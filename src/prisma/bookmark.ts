@@ -1,6 +1,6 @@
 import { prisma } from '#root/prisma/index.js'
 import { fetchMetadata } from '#root/bot/services/fetch-title-service.js'
-import { categorizeWithGoogleCloud } from '#root/bot/services/categorize-service.js'
+// import { categorizeWithGoogleCloud } from '#root/bot/services/categorize-service.js'
 import { createOrFindFolder } from '#root/prisma/folder.js'
 import type { FolderInput } from '#root/prisma/folder.js'
 
