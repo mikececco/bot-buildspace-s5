@@ -2,7 +2,7 @@ import { Composer } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 // import { createSummary } from '#root/prisma/create-summary.js'
-import { deleteSession } from '#root/prisma/destroy-session.js'
+import { deleteSession, deleteUser } from '#root/prisma/destroy-session.js'
 // import type { CreateSummaryInput } from '#root/prisma/create-summary.js'
 // import { createThoughtSummary } from '#root/prisma/create-thought-summary.js'
 import { getThoughtsOfDay } from '#root/prisma/get-thoughts.js'
@@ -16,9 +16,28 @@ feature.command('start', logHandle('command-start'), (ctx) => {
   return ctx.reply(ctx.t('welcome'))
 })
 
-feature.command('destroy', logHandle('command-destroy'), (ctx) => {
-  deleteSession('352550606')
-  return ctx.reply('Deleted')
+feature.command('destroy', logHandle('command-destroy'), async (ctx) => {
+  try {
+    // Assuming deleteSession is an asynchronous function
+    await deleteSession('352550606')
+    return ctx.reply('Deleted')
+  }
+  catch (error) {
+    console.error('Error deleting session:', error)
+    return ctx.reply('Failed to delete session. Please try again later.')
+  }
+})
+
+feature.command('destroy-user', logHandle('command-destroy'), (ctx) => {
+  try {
+    // Assuming deleteSession is an asynchronous function
+    deleteUser(352550606)
+    return ctx.reply('User deleted')
+  }
+  catch (error) {
+    console.error('Error deleting session:', error)
+    return ctx.reply('Failed to delete session. Please try again later.')
+  }
 })
 
 // feature.command('summary', logHandle('command-summary'), async (ctx) => {

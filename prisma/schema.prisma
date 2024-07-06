@@ -25,6 +25,7 @@ model User {
   thoughts   Thought[] // One-to-many relationship with Thought
   embeddings   Embedding[] // One-to-many relationship with Thought
   bookmarks   Bookmark[] // One-to-many relationship with Thought
+  folders   Folder[] // One-to-many relationship with Thought
   // summaries  Summary[] // One-to-many relationship with Summary
 
   @@map("users")
@@ -48,11 +49,11 @@ model Embedding {
   content     String
   embedding   Unsupported("vector")? // Store embedding as an array of floats
   userId      Int
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   thoughtId   Int?      // Nullable foreign key for Thought
-  thought     Thought?  @relation(fields: [thoughtId], references: [id])
+  thought     Thought?  @relation(fields: [thoughtId], references: [id], onDelete: Cascade)
   bookmarkId  Int?      // Nullable foreign key for Bookmark
-  bookmark    Bookmark? @relation(fields: [bookmarkId], references: [id])
+  bookmark    Bookmark? @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
   updatedAt   DateTime  @updatedAt @map("updated_at")
   createdAt   DateTime  @default(now()) @map("created_at")
 
@@ -62,16 +63,29 @@ model Embedding {
 model Bookmark {
   id        Int      @id @default(autoincrement())
   content   String   @default("default content")
-  folder   String    @default("Bookmarks")
+  // folder   String    @default("Bookmarks")
   name   String    @default("My bookmark")
   link   String
   userId    Int      @default(1)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId    Int
+  folder   Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
   embeddings   Embedding[] // One-to-many relationship with Thought
   updatedAt DateTime @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
   @@unique([userId, link])
   @@map("bookmarks")
+}
+
+model Folder {
+  id        Int      @id @default(autoincrement())
+  name   String   @default("Favourites")
+  bookmarks   Bookmark[] // One-to-many relationship with Thought
+  userId    Int      @default(1)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("folders")
 }
 // model Summary {
 //   id        Int      @id @default(autoincrement())

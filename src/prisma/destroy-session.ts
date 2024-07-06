@@ -18,3 +18,21 @@ export async function deleteSession(key: string) {
     await prisma.$disconnect()
   }
 }
+export async function deleteUser(telegramId: number) {
+  try {
+    const deletedUser = await prisma.user.delete({
+      where: {
+        telegramId,
+      },
+    })
+    console.log('Deleted session:', deletedUser)
+    return deletedUser
+  }
+  catch (error) {
+    console.error('Error deleting session:', error)
+    throw error
+  }
+  finally {
+    await prisma.$disconnect()
+  }
+}

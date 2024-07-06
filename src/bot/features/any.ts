@@ -14,6 +14,7 @@ import {
   DOCUMENT_CONVERSATION,
   IMAGE_CONVERSATION,
   LINK_CONVERSATION,
+  SIMPLE_LINK_CONVERSATION,
 } from '#root/bot/conversations/index.js'
 import { embed } from '#root/bot/services/embed-service.js'
 import { completion } from '#root/bot/services/completion-service.js'
@@ -46,7 +47,7 @@ const feature = composer.chatType('private')
 // }
 
 feature.on('message::url', logHandle('command-link'), async (ctx) => {
-  return ctx.conversation.enter(LINK_CONVERSATION)
+  return ctx.conversation.enter(SIMPLE_LINK_CONVERSATION)
 }) // messages with URL in text or caption (photos, etc)
 
 feature.on('message', logHandle('command-any'), async (ctx) => {
@@ -220,6 +221,17 @@ feature.callbackQuery('callback-delete', logHandle('keyboard-bookmark-day-select
   const callbackData = ctx.callbackQuery.data
 
   console.log(`User pressed ${callbackData}`)
+})
+
+feature.callbackQuery('/callback-folder-(.+)/', logHandle('keyboard-bookmark-select-folder'), async (ctx) => {
+  const folderName = ctx.match[1] // Extract folder name from callback data
+  const additionalContext = ctx.match[2] // Extract additional context from callback data
+  console.log(ctx.message)
+
+  console.log(`User chose ${folderName}`)
+  console.log(`User chose ${additionalContext}`)
+  console.log(await ctx.answerCallbackQuery(folderName))
+  await ctx.answerCallbackQuery()
 })
 
 export { composer as anyFeature }

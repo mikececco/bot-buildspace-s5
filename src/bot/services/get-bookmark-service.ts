@@ -6,7 +6,6 @@ import { config } from '#root/config.js'
 import type { CreateBookmarkInput } from '#root/prisma/bookmark.js'
 // import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
 // import { createBookmarkContext } from '#root/bot/services/create-bookmark-context.js'
-import { categorizeWithGoogleCloud } from '#root/bot/services/categorize-service.js'
 
 function arrayBufferToString(buffer: ArrayBuffer): string {
   return new TextDecoder().decode(buffer)
@@ -66,7 +65,6 @@ export async function getDocument(ctx: Context) {
         content: '',
         link: link.url,
         name: link.name,
-        folder: link.folder,
       }
       console.log(bookmarkData)
       count += 1

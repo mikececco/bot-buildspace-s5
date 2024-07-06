@@ -26,6 +26,7 @@ import {
   documentConversation,
   imageConversation,
   linkConversation,
+  simpleLinkConversation,
 } from '#root/bot/conversations/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
@@ -63,6 +64,7 @@ export function createBot(token: string, options: Options) {
   // Conversations
   protectedBot.use(conversations())
   protectedBot.use(linkConversation())
+  protectedBot.use(simpleLinkConversation())
   protectedBot.use(imageConversation())
   protectedBot.use(documentConversation())
   // Handlers
