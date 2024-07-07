@@ -4,7 +4,7 @@ import { Keyboard } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { saveBookmark } from '#root/prisma/bookmark.js'
 import { findFolderByName, getAllFolders } from '#root/prisma/folder.js'
-import type { CreateBookmarkInput } from '#root/prisma/bookmark.js'
+import type { CreateBookmarkInputFolder } from '#root/prisma/bookmark.js'
 
 export const SIMPLE_LINK_CONVERSATION = 'simple_link'
 
@@ -61,7 +61,7 @@ export function simpleLinkConversation() {
 
                 // Create your input object
                 if (folderSelected) {
-                  const input: CreateBookmarkInput = {
+                  const input: CreateBookmarkInputFolder = {
                     telegramId: folderCtx.message?.chat.id ?? 0, // Replace with actual telegramId extraction logic
                     username: folderCtx.message?.from.username ?? '', // Replace with actual username extraction logic
                     content: '', // Replace with actual content

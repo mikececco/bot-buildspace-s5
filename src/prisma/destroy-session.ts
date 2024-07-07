@@ -12,7 +12,7 @@ export async function deleteSession(key: string) {
   }
   catch (error) {
     console.error('Error deleting session:', error)
-    throw error
+    // throw error
   }
   finally {
     await prisma.$disconnect()
@@ -30,7 +30,7 @@ export async function deleteUser(telegramId: number) {
   }
   catch (error) {
     console.error('Error deleting session:', error)
-    throw error
+    // throw error
   }
   finally {
     await prisma.$disconnect()

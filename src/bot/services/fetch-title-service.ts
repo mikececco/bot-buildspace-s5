@@ -1,21 +1,20 @@
-import * as cheerio from 'cheerio'
+import fetch from 'node-fetch'
 
-export async function fetchMetadata(url: any) {
+export async function fetchMetadata(url: string) {
   try {
-    const response = await fetch(url)
-    const body = await response.text()
-    const $ = cheerio.load(body)
+    const response = await fetch(url, { method: 'HEAD' })
 
-    // Extract the title
-    const title = $('title').text().trim()
+    if (!response.ok) {
+      return { title: 'Error', description: response.status }
+    }
 
-    // Extract the description
-    const description = $('meta[name="description"]').attr('content')?.trim() || 'No description available'
+    const title = response.headers.get('title') || 'No title available'
+    const description = response.headers.get('description') || 'No description available'
 
     return { title, description }
   }
   catch (error) {
     console.error('Error fetching metadata:', error)
-    return { title: 'No title available', description: 'No description available' }
+    return { title: 'Error', description: error }
   }
 }

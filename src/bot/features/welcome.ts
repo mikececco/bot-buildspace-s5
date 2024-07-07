@@ -35,7 +35,7 @@ feature.command('bye', logHandle('command-destroy'), (ctx) => {
     return ctx.reply('User deleted')
   }
   catch (error) {
-    console.error('Error deleting session:', error)
+    console.log('Error deleting session:', error)
     return ctx.reply('Failed to delete session. Please try again later.')
   }
 })

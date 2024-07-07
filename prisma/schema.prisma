@@ -78,13 +78,15 @@ model Bookmark {
 }
 
 model Folder {
-  id        Int      @id @default(autoincrement())
-  name   String   @unique @default("Favourites")
-  bookmarks   Bookmark[] // One-to-many relationship with Thought
-  userId    Int      @default(1)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        Int       @id @default(autoincrement())
+  name      String    @default("Favourites")
+  userId    Int       @default(1)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[] // One-to-many relationship with Bookmark
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@unique([userId, name], name: "unique_folder_name_per_user")
   @@map("folders")
 }
 // model Summary {

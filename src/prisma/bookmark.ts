@@ -1,10 +1,18 @@
 import { prisma } from '#root/prisma/index.js'
 import { fetchMetadata } from '#root/bot/services/fetch-title-service.js'
 // import { categorizeWithGoogleCloud } from '#root/bot/services/categorize-service.js'
-import { createOrFindFolder } from '#root/prisma/folder.js'
+import { findFolderById } from '#root/prisma/folder.js'
 import type { FolderInput } from '#root/prisma/folder.js'
 
 export interface CreateBookmarkInput {
+  telegramId: number
+  username: string
+  content: string
+  link: string
+  name: string
+  folder: string
+}
+export interface CreateBookmarkInputFolder {
   telegramId: number
   username: string
   content: string
@@ -29,7 +37,7 @@ interface BookmarkWithUserId {
   userId: number
 }
 
-export async function saveBookmark(data: CreateBookmarkInput) {
+export async function saveBookmark(data: CreateBookmarkInputFolder) {
   try {
     // Find the user by telegramId
     let user = await prisma.user.findUnique({
@@ -64,23 +72,25 @@ export async function saveBookmark(data: CreateBookmarkInput) {
         throw new Error('Bookmark with this link already exists for this user.')
       }
 
-      const folderData: FolderInput = {
-        userId,
-        name: data.name,
-      }
-      const folder = await createOrFindFolder(folderData)
+      // const folderData: FolderInput = {
+      //   userId,
+      //   name: data.name,
+      // }
+      if (data.folderId) {
+        const folder = await findFolderById(userId, data.folderId)
 
-      if (folder) {
-        const bookmark = await prisma.bookmark.create({
-          data: {
-            content: data.content,
-            link: data.link,
-            folderId: folder.id,
-            name: data.name,
-            userId,
-          },
-        })
-        return bookmark
+        if (folder) {
+          const bookmark = await prisma.bookmark.create({
+            data: {
+              content: data.content,
+              link: data.link,
+              folderId: folder.id,
+              name: data.name,
+              userId,
+            },
+          })
+          return bookmark
+        }
       }
     }
     catch (error) {
@@ -96,7 +106,7 @@ export async function saveBookmark(data: CreateBookmarkInput) {
   }
   catch (error) {
     console.error('Error creating bookmark:', error)
-    throw error
+    // throw error
   }
   finally {
     await prisma.$disconnect()
@@ -121,65 +131,129 @@ export async function getUserBookmarks(telegramId: number) {
   }
   catch (error) {
     console.error('Error getting user bookmarks:', error)
-    throw error
+    // throw error
   }
   finally {
     await prisma.$disconnect()
   }
 }
 
-export async function saveBookmarks(bookmarks: CreateBookmarkWithFolderInput[]) {
+export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
   try {
-    const userIds = await fetchOrCreateUsers(bookmarks)
+    const bookmarksWithUserId: BookmarkWithUserId[] = []
+    const { telegramId, username } = bookmarks[0] // assuming all bookmarks have the same telegramId and username
 
-    const bookmarksToCreate = await Promise.all(
-      bookmarks.map(async (data, index) => {
-        const userId = userIds[index]
-        const existingBookmark = await prisma.bookmark.findFirst({
-          where: { userId, link: data.link },
-        })
+    // Find the user by telegramId
+    let user = await prisma.user.findUnique({
+      where: { telegramId },
+    })
 
-        if (existingBookmark) {
-          console.log(`Skipping bookmark with link '${data.link}' for user ${userId} - already exists.`)
-          return null
+    // If the user doesn't exist, create a new user
+    if (!user) {
+      user = await prisma.user.create({
+        data: { telegramId, username },
+      })
+    }
+
+    const userId = user.id // Ensure userId is a number
+
+    // Fetch existing folders for the user
+    const existingFolders = await prisma.folder.findMany({
+      where: {
+        userId,
+      },
+    })
+
+    console.log('FOLDERSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS:')
+    console.log(existingFolders)
+
+    // Create a map to store folder names and IDs for quick lookup
+    const folderMap = new Map<string, number>()
+    existingFolders.forEach((folder) => {
+      folderMap.set(folder.name.toLowerCase(), folder.id)
+    })
+    console.log(folderMap)
+
+    for (const data of bookmarks) {
+      console.log(folderMap.get(data.folder.toLowerCase()))
+      let folderId: number | undefined = folderMap.get(data.folder.toLowerCase())
+      console.log('FOLDERSSSSSSS IDDDDDDD:')
+      console.log(folderId)
+      // If folderId is not found in the map, attempt to create the folder
+      if (!folderId) {
+        console.log(' NO FOLDER IDDDDDD SO GONNA CREATE')
+        try {
+          const newFolder = await prisma.folder.create({
+            data: {
+              userId,
+              name: data.folder,
+            },
+          })
+          folderId = newFolder.id
+          folderMap.set(data.folder.toLowerCase(), folderId) // Update the map with newly created folderId
+          console.log(' UPDATED FOLDERMAP')
+          console.log(folderMap)
         }
-
-        const { title, description } = await fetchMetadata(data.link)
-        const combinedInfo = `Title: ${title}\nDescription: ${description}`
-
-        const folderData: FolderInput = {
-          userId,
-          name: data.folder,
-        }
-        const folder = await createOrFindFolder(folderData)
-
-        if (folder) {
-          return {
-            content: combinedInfo,
-            link: data.link,
-            folderId: folder.id,
-            name: data.name || title,
-            userId,
+        catch (error) {
+          if (error) {
+            console.log('ERORRRRRRRR')
+            // Unique constraint failed, folder already exists
+            const existingFolder = await prisma.folder.findFirst({
+              where: {
+                userId,
+                name: {
+                  equals: data.folder, // Case-insensitive search
+                  mode: 'insensitive', // Ensure case insensitivity
+                },
+              },
+            })
+            console.log('EXISTING FOLDERRRR')
+            console.log(existingFolder)
+            if (existingFolder) {
+              folderId = existingFolder.id
+              folderMap.set(data.folder.toLowerCase(), folderId) // Update the map with existing folderId
+            }
+          }
+          else {
+            console.log(' THROW ERRORRRRR')
+            throw error
           }
         }
-      }),
-    )
+      }
 
-    const validBookmarks = bookmarksToCreate.filter(Boolean)
+      if (!folderId) {
+        throw new Error(`Folder ID for folder '${data.folder}' was not found or could not be created.`)
+      }
 
-    if (validBookmarks.length > 0) {
-      const result = await prisma.bookmark.createMany({
-        data: validBookmarks as BookmarkWithUserId[],
-        skipDuplicates: true,
+      const existingBookmark = await prisma.bookmark.findFirst({
+        where: {
+          userId,
+          link: data.link,
+        },
       })
 
-      console.log(`Successfully saved ${result.count} bookmarks`)
-      return result
+      if (existingBookmark) {
+        console.log(`Skipping bookmark with link '${data.link}' for user ${userId} - already exists.`)
+        continue // Skip current iteration and proceed to next bookmark
+      }
+
+      // Prepare bookmark data with userId and folderId
+      bookmarksWithUserId.push({
+        content: data.content,
+        link: data.link,
+        folderId,
+        name: data.name,
+        userId,
+      })
     }
-    else {
-      console.log('All bookmarks already exist, nothing new saved.')
-      return { count: 0 }
-    }
+
+    const result = await prisma.bookmark.createMany({
+      data: bookmarksWithUserId,
+      skipDuplicates: true, // This option skips records that violate unique constraints
+    })
+
+    console.log(`Successfully saved ${result.count} bookmarks`)
+    return result
   }
   catch (error) {
     console.error('Error saving bookmarks:', error)
@@ -188,27 +262,4 @@ export async function saveBookmarks(bookmarks: CreateBookmarkWithFolderInput[]) 
   finally {
     await prisma.$disconnect()
   }
-}
-
-async function fetchOrCreateUsers(bookmarks: CreateBookmarkInput[]): Promise<number[]> {
-  const userIds: number[] = []
-
-  for (const data of bookmarks) {
-    let user = await prisma.user.findUnique({
-      where: { telegramId: data.telegramId },
-    })
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          telegramId: data.telegramId,
-          username: data.username,
-        },
-      })
-    }
-
-    userIds.push(user.id)
-  }
-
-  return userIds
 }
