@@ -4,7 +4,6 @@ import { HTTPException } from 'hono/http-exception'
 import { serve } from '@hono/node-server'
 import { webhookCallback } from 'grammy'
 import { getPath } from 'hono/utils/url'
-// import { executeCronJob } from '../../api/cron/cron.js'
 import { requestId } from './middlewares/request-id.js'
 import { logger } from './middlewares/logger.js'
 import type { Env } from './environment.js'
@@ -53,11 +52,6 @@ export function createServer(bot: Bot) {
     return c.json({ status: true })
   })
   server.get('/api', c => c.json({ status: true }))
-  server.get('/api/cron', async (c) => {
-    console.log('HELLO')
-    // await executeCronJob(c)
-    return c.json({ success: true })
-  })
 
   server.post('/webhook', async (c) => {
     // console.log('Webhook called');
