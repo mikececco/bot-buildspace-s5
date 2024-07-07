@@ -14,7 +14,6 @@ import { requestLogger } from '#root/server/middlewares/request-logger.js'
 
 export function createServer(bot: Bot) {
   console.log('Serverr')
-  console.log('Serverr')
   const server = new Hono<Env>()
 
   server.use(requestId())
@@ -24,6 +23,8 @@ export function createServer(bot: Bot) {
     server.use(requestLogger())
 
   server.onError(async (error, c) => {
+    console.log(error)
+
     if (error instanceof HTTPException) {
       if (error.status < 500)
         c.var.logger.info(error)
