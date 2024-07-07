@@ -164,24 +164,16 @@ export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
       },
     })
 
-    console.log('FOLDERSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS:')
-    console.log(existingFolders)
-
     // Create a map to store folder names and IDs for quick lookup
     const folderMap = new Map<string, number>()
     existingFolders.forEach((folder) => {
       folderMap.set(folder.name.toLowerCase(), folder.id)
     })
-    console.log(folderMap)
 
     for (const data of bookmarks) {
-      console.log(folderMap.get(data.folder.toLowerCase()))
       let folderId: number | undefined = folderMap.get(data.folder.toLowerCase())
-      console.log('FOLDERSSSSSSS IDDDDDDD:')
-      console.log(folderId)
       // If folderId is not found in the map, attempt to create the folder
       if (!folderId) {
-        console.log(' NO FOLDER IDDDDDD SO GONNA CREATE')
         try {
           const newFolder = await prisma.folder.create({
             data: {
@@ -191,12 +183,9 @@ export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
           })
           folderId = newFolder.id
           folderMap.set(data.folder.toLowerCase(), folderId) // Update the map with newly created folderId
-          console.log(' UPDATED FOLDERMAP')
-          console.log(folderMap)
         }
         catch (error) {
           if (error) {
-            console.log('ERORRRRRRRR')
             // Unique constraint failed, folder already exists
             const existingFolder = await prisma.folder.findFirst({
               where: {
@@ -207,15 +196,12 @@ export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
                 },
               },
             })
-            console.log('EXISTING FOLDERRRR')
-            console.log(existingFolder)
             if (existingFolder) {
               folderId = existingFolder.id
               folderMap.set(data.folder.toLowerCase(), folderId) // Update the map with existing folderId
             }
           }
           else {
-            console.log(' THROW ERRORRRRR')
             throw error
           }
         }
