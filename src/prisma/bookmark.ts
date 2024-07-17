@@ -10,6 +10,7 @@ export interface CreateBookmarkInput {
   content: string
   link: string
   name: string
+  tags: string
   folder: string
 }
 export interface CreateBookmarkInputFolder {
@@ -33,6 +34,7 @@ export interface CreateBookmarkWithFolderInput {
 
 interface BookmarkWithUserId {
   content: string
+  tags: string
   link: string
   folderId: number
   name: string
@@ -232,6 +234,7 @@ export async function saveBookmarks(bookmarks: CreateBookmarkInput[]) {
         link: data.link,
         folderId,
         name: data.name,
+        tags: data.tags,
         userId,
       })
     }
