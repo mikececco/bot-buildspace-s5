@@ -25,11 +25,11 @@ export async function deleteUser(telegramId: number) {
         telegramId,
       },
     })
-    console.log('Deleted session:', deletedUser)
+    console.log('Deleted user:', deletedUser)
     return deletedUser
   }
   catch (error) {
-    console.error('Error deleting session:', error)
+    console.error('Error deleting user:', error)
     // throw error
   }
   finally {

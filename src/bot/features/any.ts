@@ -93,24 +93,8 @@ feature.on('message', logHandle('command-any'), async (ctx) => {
     await ctx.reply(`Analizing your document, please wait...`)
     ctx.chatAction = 'typing'
     try {
-      const { count, bookmarksList } = await getDocument(ctx)
+      const count = await getDocument(ctx)
       await ctx.reply(`${count} bookmarks counted and saved.`)
-
-      // Run saveBookmarks asynchronously
-      saveBookmarks(bookmarksList)
-        .then(() => {
-          console.error('Saved in saveBookmarks')
-        })
-        .catch((error) => {
-          console.error('Error in saveBookmarks:', error)
-          // Handle the error gracefully, notify the user or log the issue
-          // Example: ctx.reply('An error occurred while saving bookmarks.')
-        })
-      // Assuming webhook sending is somewhere else in your code
-      // If it's here, you should handle errors similarly
-      // Example: await sendToWebhook(data)
-
-      // Return success response or continue with other logic
     }
     catch (error) {
       console.error('Error in saveBookmarks:', error)

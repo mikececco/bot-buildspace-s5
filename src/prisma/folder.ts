@@ -95,7 +95,6 @@ export async function createOrFindFolder(data: FolderInput) {
     throw error
   }
 }
-
 export async function getAllFolders(telegramId: number) {
   try {
     const user = await prisma.user.findUnique({

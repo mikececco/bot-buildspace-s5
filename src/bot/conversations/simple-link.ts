@@ -3,8 +3,13 @@ import { createConversation } from '@grammyjs/conversations'
 import { Keyboard } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { saveBookmark } from '#root/prisma/bookmark.js'
-import { findFolderByName, getAllFolders } from '#root/prisma/folder.js'
+import { createOrFindFolder, findFolderByName, getAllFolders } from '#root/prisma/folder.js'
 import type { CreateBookmarkInputFolder } from '#root/prisma/bookmark.js'
+import type { FolderInput } from '#root/prisma/folder.js'
+import { createOrFindUser } from '#root/prisma/create-user.js'
+import { getLinkContent } from '#root/bot/services/get-link-content-service.js'
+import { descriptionKeyboard } from '#root/bot/keyboards/index.js'
+import { categorizeWithGoogleCloud } from '#root/bot/services/categorize-service.js'
 
 export const SIMPLE_LINK_CONVERSATION = 'simple_link'
 
@@ -16,9 +21,9 @@ export function simpleLinkConversation() {
           await ctx.reply('Analyzing your link...')
           ctx.chatAction = 'typing'
 
-          const text = ctx.message.text.toLowerCase()
+          const link = ctx.message.text.toLowerCase()
 
-          if (text.includes('spotify') || text.includes('youtube')) {
+          if (link.includes('spotify') || link.includes('youtube') || link.includes('instagram')) {
             await ctx.reply('Detected Spotify or YouTube link.')
             return await ctx.reply('Feature to extrapolate content coming soon!')
           }
@@ -26,69 +31,41 @@ export function simpleLinkConversation() {
           let shouldExit = false
 
           while (!shouldExit) {
-            await ctx.reply('Type bookmark name')
+            await ctx.reply('Give it a name.')
             const nameCtx = await conversation.wait()
 
             if (nameCtx.has('message:text')) {
               await nameCtx.reply('Got it!')
+              const bookmarkName = nameCtx.message.text
 
-              // Fetch user folders
-              const folders = await getAllFolders(nameCtx.from.id)
-              const keyboard = new Keyboard()
-
-              if (folders) {
-                if (folders.length === 0) {
-                  await nameCtx.reply('You have no folders to save your bookmark.')
-                  shouldExit = true
-                  return
-                }
-
-                folders.forEach((folder) => {
-                  keyboard.text(folder.name).row()
-                })
-              }
-              // Send a message with the inline keyboard
-              await nameCtx.reply('Select folder', {
-                reply_markup: keyboard,
+              await nameCtx.reply('Manually describe or generate bookmark description.', {
+                reply_markup: descriptionKeyboard,
               })
 
-              const folderCtx = await conversation.wait()
+              const descriptionCtx = await conversation.wait()
 
-              if (folderCtx.has('message:text')) {
-                const folderText = folderCtx.message.text
+              if (descriptionCtx.has('message:text')) {
+                if (descriptionCtx.message.text === 'Describe') {
+                  await descriptionCtx.reply('Describe your link.', {
+                    reply_markup: { remove_keyboard: true },
+                  })
+                  const descriptionInputCtx = await conversation.wait()
 
-                const folderSelected = await findFolderByName(ctx.from.id, folderText)
-
-                // Create your input object
-                if (folderSelected) {
-                  const input: CreateBookmarkInputFolder = {
-                    telegramId: folderCtx.message?.chat.id ?? 0, // Replace with actual telegramId extraction logic
-                    username: folderCtx.message?.from.username ?? '', // Replace with actual username extraction logic
-                    content: '', // Replace with actual content
-                    link: text, // Replace with actual link
-                    folderId: folderSelected.id, // Assign the selected folder here
-                    name: nameCtx.message.text, // Replace with actual name
-                  }
-                  try {
-                    const bookmark = await saveBookmark(input)
-                    await folderCtx.reply(`Bookmark saved successfully in folder: ${folderSelected}`, {
-                      reply_markup: { remove_keyboard: true },
-                    })
-                    await folderCtx.reply(`Bookmark details: ${JSON.stringify(bookmark)}`)
-                  }
-                  catch (error) {
-                    console.error('Error saving bookmark:', error)
-                    await folderCtx.reply('Failed to save bookmark. Please try again.')
-                  }
-                  shouldExit = true
+                  await descriptionInputCtx.reply('Got it!', {
+                    reply_markup: { remove_keyboard: true },
+                  })
+                  shouldExit = await folderSelect(conversation, descriptionInputCtx, link, bookmarkName)
+                }
+                else {
+                  await descriptionCtx.reply('Autogenerating...', {
+                    reply_markup: { remove_keyboard: true },
+                  })
+                  shouldExit = await folderSelect(conversation, descriptionCtx, link, bookmarkName)
                 }
               }
-              else if (folderCtx.hasCommand('cancel')) {
-                await folderCtx.reply('Cancelled.')
-                shouldExit = true
-              }
               else {
-                await folderCtx.reply('Invalid input. Please select a folder.')
+                await descriptionCtx.reply('Not valid.')
+                shouldExit = true
               }
             }
             else if (nameCtx.hasCommand('cancel')) {
@@ -97,6 +74,7 @@ export function simpleLinkConversation() {
             }
             else {
               await nameCtx.reply('Invalid input. Type bookmark name.')
+              shouldExit = false
             }
           }
         }
@@ -108,4 +86,147 @@ export function simpleLinkConversation() {
     },
     SIMPLE_LINK_CONVERSATION,
   )
+}
+
+async function folderSelect(
+  conversation: Conversation<Context>,
+  ctx: Context,
+  link: string,
+  bookmarkName: string,
+): Promise<boolean> {
+  if (ctx && ctx.from) {
+    // Fetch user folders
+    const folders = await getAllFolders(ctx.from.id)
+    const keyboard = new Keyboard()
+
+    if (folders) {
+      folders.forEach((folder) => {
+        keyboard.text(folder.name).row()
+      })
+    }
+    keyboard.text('Create folder').row()
+    await ctx.reply('Select folder', {
+      reply_markup: keyboard,
+    })
+
+    const folderCtx = await conversation.wait()
+
+    if (folderCtx.has('message:text')) {
+      if (folderCtx.message.text === 'Create folder') {
+        folderCtx.chatAction = 'typing'
+        await folderCtx.reply('Folder name?', {
+          reply_markup: { remove_keyboard: true },
+        })
+        const folderNameCtx = await conversation.wait()
+        if (folderNameCtx.has('message:text')) {
+          folderNameCtx.chatAction = 'typing'
+          const folderName = folderNameCtx.message.text
+
+          const user = await createOrFindUser({
+            telegramId: ctx.from.id,
+            username: ctx.from.username ?? 'Unknown', // Use optional chaining and provide a default value
+          })
+
+          const folderData: FolderInput = {
+            userId: user.id,
+            name: folderName,
+          }
+
+          const folder = await createOrFindFolder(folderData)
+
+          if (folder) {
+            try {
+              addTagsAndLinkContent(link, bookmarkName, folder.id, folderNameCtx)
+              await folderNameCtx.reply(`Bookmark ${bookmarkName} with link ${link} saved successfully in folder: ${folderName}`, {
+                reply_markup: { remove_keyboard: true },
+              })
+            }
+            catch (error) {
+              console.error('Error saving bookmark:', error)
+              await folderCtx.reply('Bookmark exists already, use search function to find it!')
+            }
+            return true
+          }
+        }
+      }
+      else {
+        const folderText = folderCtx.message.text
+
+        const folderSelected = await findFolderByName(ctx.from.id, folderText)
+
+        // Create your input object
+        if (folderSelected) {
+          try {
+            addTagsAndLinkContent(link, bookmarkName, folderSelected.id, folderCtx)
+            await folderCtx.reply(`Bookmark ${bookmarkName} with link ${link} saved successfully in folder: ${folderSelected.name}`, {
+              reply_markup: { remove_keyboard: true },
+            })
+          }
+          catch (error) {
+            console.error('Error saving bookmark:', error)
+            await folderCtx.reply('Failed to save bookmark. Please try again.')
+          }
+          return true
+        }
+      }
+    }
+    else if (folderCtx.hasCommand('cancel')) {
+      await folderCtx.reply('Cancelled.')
+      return true
+    }
+    else {
+      await folderCtx.reply('Invalid input. Please select a folder.')
+    }
+  }
+  return false
+}
+
+function addTagsAndLinkContent(
+  link: string,
+  bookmarkName: string,
+  folderId: number,
+  ctx: Context,
+): Promise<void> {
+  let linkContent: string // Variable to hold link content
+
+  // Fetch content for the link
+  return getLinkContent(link)
+    .then((content) => {
+      linkContent = content // Store link content for later use
+      // Categorize content with Google Cloud
+      return categorizeWithGoogleCloud(content)
+        .then((tags) => {
+          // Prepare input for saving bookmark
+          const input: CreateBookmarkInputFolder = {
+            telegramId: ctx.message?.chat.id ?? 0, // Replace with actual telegramId extraction logic
+            username: ctx.message?.from.username ?? '', // Replace with actual username extraction logic
+            content: linkContent, // Replace with actual content
+            link, // Replace with actual link
+            folderId, // Assign the selected folder here
+            name: bookmarkName, // Replace with actual name
+            tags,
+          }
+
+          // Save bookmark
+          return saveBookmark(input)
+            .then(() => {
+              console.log(`Bookmark ${bookmarkName} saved successfully.`)
+            })
+            .catch((error) => {
+              console.error('Error saving bookmark:', error)
+              throw error // Propagate the error if necessary
+            })
+        })
+        .catch((error) => {
+          console.error('Error categorizing content:', error)
+          throw error // Propagate the error if necessary
+        })
+    })
+    .catch((error) => {
+      console.error('Error fetching content:', error)
+      throw error // Propagate the error if necessary
+    })
+    .finally(() => {
+      console.log('Content fetching and saving completed.')
+    })
 }

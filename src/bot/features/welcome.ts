@@ -28,10 +28,10 @@ feature.command('destroy', logHandle('command-destroy'), async (ctx) => {
   }
 })
 
-feature.command('bye', logHandle('command-destroy'), (ctx) => {
+feature.command('bye', logHandle('command-destroy'), async (ctx) => {
   try {
     // Assuming deleteSession is an asynchronous function
-    deleteUser(352550606)
+    await deleteUser(352550606)
     return ctx.reply('User deleted')
   }
   catch (error) {

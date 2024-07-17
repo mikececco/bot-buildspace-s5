@@ -18,6 +18,7 @@ export interface CreateBookmarkInputFolder {
   content: string
   link: string
   name: string
+  tags: string
   folderId?: number
 }
 export interface CreateBookmarkWithFolderInput {
@@ -26,6 +27,7 @@ export interface CreateBookmarkWithFolderInput {
   content: string
   link: string
   name: string
+  tags: string
   folder: string
 }
 
@@ -86,6 +88,7 @@ export async function saveBookmark(data: CreateBookmarkInputFolder) {
               link: data.link,
               folderId: folder.id,
               name: data.name,
+              tags: data.tags,
               userId,
             },
           })

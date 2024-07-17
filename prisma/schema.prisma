@@ -66,6 +66,7 @@ model Bookmark {
   // folder   String    @default("Bookmarks")
   name   String    @default("My bookmark")
   link   String
+  tags   String   @default("")
   userId    Int      @default(1)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   folderId    Int

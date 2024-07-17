@@ -26,7 +26,7 @@ export function linkConversation() {
           return await ctx.reply('Feature to extrapolate content coming soon!')
         }
 
-        createContext(ctx)
+        // createContext(ctx)
 
         let shouldExit = false
 
